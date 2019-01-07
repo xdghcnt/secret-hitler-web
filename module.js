@@ -7,7 +7,7 @@ function init(wsServer, path) {
         app = wsServer.app,
         registry = wsServer.users,
         channel = "secret-hitler",
-        testMode = true;
+        testMode = false;
 
     app.post("/secret-hitler/upload-avatar", function (req, res) {
         registry.log(`secret-hitler - ${req.body.userId} - upload-avatar`);
@@ -248,8 +248,10 @@ function init(wsServer, path) {
                         medium: [null, "inspect", "election", "shooting", "shooting"],
                         large: ["inspect", "inspect", "election", "shooting", "shooting"]
                     }[gameType][room.fascTrack - 1];
-                    if (room.presAction === "inspect-deck")
+                    if (room.presAction === "inspect-deck") {
                         players[room.currentPres].cards = state.deck.splice(0, 3);
+                        sendStateSlot(room.currentPres);
+                    }
                     if (!room.presAction)
                         nextPres();
                     else
@@ -279,6 +281,7 @@ function init(wsServer, path) {
                 },
                 enactCard = (card) => {
                     room.vetoRequest = null;
+                    room.skipTrack = 0;
                     room[(card === "l" ? "libTrack" : "fascTrack")] += 1;
                     if (room.libTrack === 5) {
                         room.libWin = true;
@@ -362,7 +365,7 @@ function init(wsServer, path) {
                     }
                 },
                 "vote": (slot, vote) => {
-                    if (room.phase === "voting" && players[slot] && ~[null, true, false].indexOf(vote)) {
+                    if (room.phase === "voting" && players[slot] && !room.playersShot.has(slot) && ~[null, true, false].indexOf(vote)) {
                         if (players[slot].vote !== null) {
                             players[slot].vote = null;
                             room.playersVoted.delete(slot);
@@ -388,6 +391,7 @@ function init(wsServer, path) {
                                 }
                             } else {
                                 room.currentCan = null;
+                                room.specialElection = null;
                                 room.currentPres = getNextSlot(room.currentPres);
                                 incrSkipTrack();
                                 if (room.phase !== "idle")
@@ -424,8 +428,9 @@ function init(wsServer, path) {
                         && !room.playersInspected.has(inspectSlot) && slot !== inspectSlot) {
                         players[slot].inspect = {
                             slot: inspectSlot,
-                            party: players[inspectSlot].role === "h" ? "f" : players[inspectSlot].role
+                            party: players[inspectSlot].role === "l" ? "l" : "f"
                         };
+                        room.playersInspected.add(inspectSlot);
                         room.presAction = null;
                         sendStateSlot(slot);
                         nextPres();
@@ -472,6 +477,7 @@ function init(wsServer, path) {
                     if (room.phase === "can-draw" && room.currentPres === slot && room.vetoRequest) {
                         if (accept) {
                             state.discardDeck.push(...players[room.currentCan].cards.splice(0));
+                            sendStateSlot(room.currentPres);
                             processReshuffle();
                             incrSkipTrack();
                             if (room.libWin === null)
@@ -560,6 +566,12 @@ function init(wsServer, path) {
                         room.spectators.add(user);
                         update();
                         sendState(user);
+                    }
+                },
+                "notes": (user, notes) => {
+                    if (user === room.hostId) {
+                        room.notes = notes;
+                        update();
                     }
                 }
             };

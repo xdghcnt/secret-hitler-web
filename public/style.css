@@ -705,10 +705,31 @@ body {
     right: -9px;
 }
 
-.accept-button.veto {    font-style: normal;
+.accept-button.veto {
+    font-style: normal;
     padding: 5.6px 8px;
     font-size: 34px;
     margin: 10px 5px;
     font-family: sans-serif;
     text-transform: uppercase;
+}
+
+.notes-section {
+    position: absolute;
+    right: 15px;
+    bottom: 15px;
+}
+
+.notes, #notebook {
+    white-space: pre;
+    background: rgba(255, 252, 245, 0.58);
+    width: 236px;
+    height: 210px;
+    padding: 10px;
+    box-sizing: border-box;
+    font-weight: bold;
+    font-family: monospace;
+    overflow-x: hidden;
+    overflow-y: auto;
+    border: none;
 }

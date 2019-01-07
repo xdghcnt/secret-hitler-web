@@ -422,6 +422,17 @@ class Game extends React.Component {
         this.socket.emit("test-command", command);
     }
 
+    handleChangeNotes(data) {
+        this.debouncedEmit("notes", data);
+    }
+
+    debouncedEmit(event, data) {
+        clearTimeout(this.debouncedEmitTimer);
+        this.debouncedEmitTimer = setTimeout(() => {
+            this.socket.emit(event, data);
+        }, 500);
+    }
+
     openRules() {
         window.open("https://secrethitler.com/assets/Secret_Hitler_Rules.pdf", "_blank");
     }
@@ -437,7 +448,7 @@ class Game extends React.Component {
         let status;
         if (data.inited) {
             const
-                prevResult = data.libWin === null ? "" : (data.libWin ? "Fascists win! " : "Liberals win! ");
+                prevResult = data.libWin === null ? "" : (!data.libWin ? "Fascists win! " : "Liberals win! ");
             if (notEnoughPlayers)
                 status = `${prevResult}Not enough players`;
             else if (data.phase === "idle")
@@ -595,7 +606,8 @@ class Game extends React.Component {
                                           className="material-icons accept-button">
                                         check
                                     </i>) : ""}
-                                {data.vetoActive && data.userSlot === data.currentCan && data.vetoRequest === null
+                                {data.phase === "can-draw" && data.vetoActive && data.userSlot === data.currentCan
+                                && data.vetoRequest === null
                                     ? (<i onClick={() => this.handleClickVetoRequest()}
                                           className="accept-button veto">
                                         Veto?
@@ -610,6 +622,12 @@ class Game extends React.Component {
                                           className="accept-button veto">
                                         No...
                                     </i>) : ""}
+                            </div>
+                            <div className="notes-section">
+                                {isHost ? (<textarea id="notebook"
+                                                     defaultValue={data.notes}
+                                                     onChange={(event => this.handleChangeNotes(event.target.value))}/>) : (
+                                    <div className="notes">{data.notes}</div>)}
                             </div>
                             <div className="help-panel">
                                 <i onClick={() => this.showHelp()}
