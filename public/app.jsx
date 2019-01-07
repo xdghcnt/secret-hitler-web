@@ -588,13 +588,14 @@ class Game extends React.Component {
                                 </div>
                             </div>
                             <div className="hand-section">
-                                {userData && data.phase === "voting" ? (<div className="vote-cards">
-                                    <div onClick={() => this.handleClickVote(false)}
-                                         className={"vote-card nein " + (playerVote != null ? (!playerVote ? "selected" : "unselected") : "")}/>
-                                    <div
-                                        onClick={() => this.handleClickVote(true)}
-                                        className={"vote-card ja " + (playerVote != null ? (playerVote ? "selected" : "unselected") : "")}/>
-                                </div>) : (userData && userData.cards ? "" : "")}
+                                {userData && !~data.playersShot.indexOf(data.userSlot) && data.phase === "voting" ? (
+                                    <div className="vote-cards">
+                                        <div onClick={() => this.handleClickVote(false)}
+                                             className={"vote-card nein " + (playerVote != null ? (!playerVote ? "selected" : "unselected") : "")}/>
+                                        <div
+                                            onClick={() => this.handleClickVote(true)}
+                                            className={"vote-card ja " + (playerVote != null ? (playerVote ? "selected" : "unselected") : "")}/>
+                                    </div>) : (userData && userData.cards ? "" : "")}
                                 {userData && userData.cards ? (<div className="policy-cards">
                                     {userData.cards.map((card, index) => (
                                         <div

@@ -282,6 +282,8 @@ function init(wsServer, path) {
                     room.skipTrack += 1;
                     if (room.skipTrack === 3) {
                         room.skipTrack = 0;
+                        room.prevCan = null;
+                        room.prevPres = null;
                         enactCard(state.deck.splice(0, 1)[0])
                     }
                 },
