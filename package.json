@@ -1,0 +1,13 @@
+{
+  "name": "secret-hitler",
+  "version": "0.0.0",
+  "main": "module.js",
+  "private": true,
+  "files": [
+    "module.js",
+    "public"
+  ],
+  "dependencies": {
+    "ws-server-engine": "git://github.com/xdghcnt/ws-server-engine.git"
+  }
+}

@@ -1,0 +1,714 @@
+.game-board {
+    min-width: 500px;
+}
+
+.player.self {
+    font-weight: bold;
+}
+
+.player.offline {
+}
+
+.player.offline .player-name-text {
+}
+
+.spectators .player.offline .player-name-text {
+}
+
+.host-controls {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    padding: 6px;
+    background: rgba(255, 252, 245, 0.58);
+    user-select: none;
+    cursor: default;
+    text-align: right;
+    z-index: 2;
+}
+
+.little-controls {
+    text-align: left;
+    border-bottom: 1px solid;
+    padding-bottom: 6px;
+    height: 25px;
+}
+
+.little-controls input {
+    width: 45px;
+    background: transparent;
+    border: 1px solid;
+    color: #000000;
+    padding: 2px;
+    margin: 3px;
+}
+
+.little-controls div {
+    display: inline-block;
+}
+
+.little-controls i {
+    vertical-align: middle;
+    margin-right: 2px;
+}
+
+.little-controls .value {
+    vertical-align: middle;
+    margin: 0 3px;
+}
+
+.host-controls-menu {
+    display: none;
+    margin-bottom: 9px;
+}
+
+.host-controls:hover .host-controls-menu {
+    display: block;
+}
+
+.settings-button {
+    cursor: pointer;
+}
+
+.settings-button:hover {
+    background: #d4d4d4;
+}
+
+.settings-button.inactive {
+    opacity: 0.3;
+}
+
+.side-buttons {
+    display: none;
+}
+
+.host-controls:hover .side-buttons {
+    display: inline-block;
+}
+
+#avatar-input {
+    display: none;
+}
+
+body {
+    background: url(bg.png) black;
+    background-position: bottom;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+.kicked {
+    color: white;
+    padding: 22px;
+    text-align: center;
+}
+
+.player {
+    user-select: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.player-host-controls {
+    display: none;
+    vertical-align: text-bottom;
+}
+
+.player-host-controls > * {
+    margin-left: 3px;
+}
+
+.player:hover .player-host-controls {
+    display: flex;
+    flex: 0;
+}
+
+.player .host-button, .command .host-button {
+    font-size: 16px;
+    cursor: pointer;
+    vertical-align: middle;
+}
+
+.spectators-section {
+    display: none;
+    text-align: center;
+    position: fixed;
+    top: 0;
+    right: 0;
+    z-index: 1;
+}
+
+.spectators-section.active {
+    display: block;
+}
+
+.spectators {
+    display: inline-block;
+    padding: 6px;
+    cursor: pointer;
+    background: rgba(255, 252, 245, 0.58);
+    user-select: none;
+    white-space: nowrap;
+    height: 20px;
+}
+
+.spectators .player {
+    display: inline-block;
+    margin: 0 4px;
+    padding: 0;
+    width: auto;
+}
+
+.spectators .player:hover .player-host-controls {
+    display: inline-block;
+}
+
+.avatar {
+    width: 82px;
+    height: 82px;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.avatar:hover .set-avatar-button {
+    display: block;
+}
+
+.set-avatar-button {
+    display: none;
+}
+
+.set-avatar-button i {
+    position: absolute;
+    right: 3px;
+    bottom: 3px;
+    color: #4c4c4c;
+    background: rgba(212, 212, 212, 0.74);
+    z-index: 2;
+}
+
+.player-name {
+    text-align: center;
+    width: 100%;
+}
+
+.master-slot .player-name {
+    display: block;
+}
+
+.master-slot .player-name-text {
+    width: 75px;
+}
+
+.spectators .player-name-text {
+    display: inline;
+}
+
+.player-slot {
+    display: flex;
+    margin: 6px;
+    padding: 5px;
+    background: #adadad;
+    color: white;
+    border-radius: 4px;
+    z-index: 1;
+    position: relative;
+}
+
+.player-section {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.join-slot-button {
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.player-name-text {
+    width: 100%;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    max-width: 82px;
+}
+
+.player-role {
+    width: 46px;
+    height: 64.2px;
+    position: absolute;
+    top: -9px;
+    left: -16px;
+    background: url(roles.jpg);
+    background-size: cover;
+    box-shadow: 0 0 1px 1px #6b6b6b;
+}
+
+.bg-color-0 {
+    background: #c65186;
+}
+
+.bg-color-1 {
+    background: #9b9b9b;
+}
+
+.bg-color-2 {
+    background: #65371d;
+}
+
+.bg-color-3 {
+    background: #b01008;
+}
+
+.bg-color-4 {
+    background: #e16600;
+}
+
+.bg-color-9 {
+    background: #75279b;
+}
+
+.bg-color-8 {
+    background: #24367a;
+}
+
+.bg-color-7 {
+    background: #096060;
+}
+
+.bg-color-6 {
+    background: #257007;
+}
+
+.bg-color-5 {
+    background: #baba45;
+}
+
+.help-panel {
+    position: fixed;
+    left: 0;
+    top: 0;
+    background: rgba(255, 252, 245, 0.58);
+    z-index: 2;
+    padding: 6px;
+    user-select: none;
+}
+
+.help-panel:hover {
+    background: rgba(255, 252, 245, 0.86);
+}
+
+.status-message {
+    display: none;
+    margin-left: 5px;
+    margin-top: -2px;
+    vertical-align: super;
+}
+
+.help-panel:hover .status-message {
+    display: inline-block;
+}
+
+.game-table {
+    display: flex;
+    flex-flow: column;
+    align-items: center;
+}
+
+.game-table-top {
+    width: 717px;
+    height: 423px;
+    justify-content: center;
+    align-items: center;
+    display: flex;
+    border: 13px solid #4c1c1c;
+    box-sizing: border-box;
+    background: url(table-bg.jpg);
+    background-size: contain;
+}
+
+.game-track-section {
+    width: 438px;
+    height: 201px;
+    background: url(policy-track.png);
+    background-size: cover;
+    display: flex;
+}
+
+.middle-row {
+    display: flex;
+}
+
+.main-slots {
+    display: flex;
+    width: 487px;
+    justify-content: space-between;
+}
+
+.side-slots {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+}
+
+.player-table-section {
+    position: absolute;
+    width: 138px;
+    height: 90px;
+    display: flex;
+    flex-direction: column;
+}
+
+.main-slots.bottom .player-table-section {
+    top: -104px;
+    left: -22px;
+}
+
+.main-slots.top .player-table-section {
+    bottom: -104px;
+    left: -22px;
+    flex-direction: column-reverse;
+}
+
+.side-slots.left .player-table-section {
+    top: 10px;
+    right: -133px;
+    transform: rotateZ(90deg);
+}
+
+.side-slots.right .player-table-section {
+    top: 10px;
+    left: -133px;
+    transform: rotateZ(-90deg);
+}
+
+.plate-section {
+    height: 49px;
+}
+
+.plate {
+    background: url(plates.jpg);
+    width: 115px;
+    height: 40px;
+    background-size: cover;
+    margin: auto;
+}
+
+.plate.prev {
+    opacity: 0.7;
+}
+
+.side-slots .plate {
+    transform: rotateZ(180deg);
+}
+
+.plate.button {
+    opacity: 0.3;
+    cursor: pointer;
+}
+
+.plate.button:hover {
+    opacity: 0.6;
+}
+
+.vote-card {
+    width: 114px;
+    height: 159px;
+    background: url(voting-cards.png);
+    margin: 8px;
+    background-size: cover;
+}
+
+.vote-card.ja {
+    background-position-x: -114px;
+}
+
+.vote-card.nein {
+    background-position-x: -231px;
+}
+
+.vote-section {
+    display: flex;
+    justify-content: center;
+    height: 60px;
+}
+
+.vote-section .vote-card {
+    width: 38px;
+    height: 53px;
+    transform: rotateZ(-90deg);
+    margin: -3px;
+}
+
+.vote-section .vote-card.ja {
+    background-position-x: -38px;
+}
+
+.vote-section .vote-card.nein {
+    background-position-x: -77px;
+}
+
+.hand-section {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    z-index: 1;
+    display: flex;
+    align-items: flex-end;
+}
+
+.vote-cards {
+    display: flex;
+    align-items: flex-end;
+}
+
+.vote-card.selected {
+    margin-bottom: 25px;
+}
+
+.vote-card.unselected {
+    margin-bottom: -30px;
+    opacity: 0.6;
+}
+
+.hand-section .vote-card, .hand-section .policy-card {
+    cursor: pointer;
+}
+
+.player-slot.unoccupied {
+    visibility: hidden;
+}
+
+.player-slot.inactive {
+    background: none;
+}
+
+.policy-cards {
+    display: flex;
+    align-items: flex-end;
+}
+
+.policy-card {
+    width: 114px;
+    height: 159px;
+    background: url(policy-cards.png);
+    margin: 8px;
+    background-size: cover;
+}
+
+.deck.hidden {
+    visibility: hidden;
+}
+
+.policy-card.l {
+    background-position-x: -107px;
+}
+
+.policy-card.f {
+    background-position-x: -217px;
+}
+
+.player-role.check-button {
+    cursor: pointer;
+    opacity: 0.6;
+}
+
+.fasc-track {
+    display: flex;
+    padding: 41px 25px;
+}
+
+.lib-track {
+    display: flex;
+    padding: 10px 47px;
+}
+
+.policy-slot {
+    width: 38px;
+    height: 38px;
+    margin: 0 4.3px;
+    background: url(pres-actions.png);
+    background-size: cover;
+}
+
+.game-track .policy-card {
+    width: 38.3px;
+    height: 56px;
+    margin-top: -14px;
+    margin-left: -1px;
+    background-position-x: -77px;
+}
+
+.deck .policy-card {
+    width: 38.3px;
+    height: 56px;
+    margin: 7px;
+}
+
+.game-track .policy-card.f {
+    background-position-x: -77px;
+}
+
+.game-track .policy-card.l {
+    background-position-x: -38px;
+}
+
+.deck {
+    display: flex;
+    flex-direction: column;
+    align-self: flex-end;
+    padding-bottom: 15px;
+    padding-left: 1px;
+}
+
+.deck-count {
+    color: white;
+    text-align: center;
+    margin-bottom: -9px;
+    font-size: 20px;
+    font-weight: bold;
+    background: #00000057;
+}
+
+.skip-token {
+    width: 10px;
+    height: 10px;
+    background: #004e6d;
+    border-radius: 25px;
+}
+
+.skip-track {
+    padding: 3px 110.7px;
+}
+
+.skip-token.skip-1 {
+    margin-left: 32px;
+}
+
+.skip-token.skip-2 {
+    margin-left: 63px;
+}
+
+.win-banners {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 10px;
+    right: 10px;
+    display: none;
+    z-index: -1;
+}
+
+.lib-win .win-banners, .fasc-win .win-banners {
+    display: block;
+}
+
+.banner {
+    height: 550px;
+    width: 91px;
+    background: url(banners.png);
+    position: absolute;
+    background-size: cover;
+}
+
+.lib-win .banner {
+    background-position-x: -90px;
+}
+
+.banner.left {
+    left: 0;
+}
+
+.banner.right {
+    right: 0;
+}
+
+.cards-hand .policy-card {
+    width: 23px;
+    height: 33px;
+    margin: 1px;
+}
+
+.cards-hand {
+    display: flex;
+    position: absolute;
+    bottom: -8px;
+    align-self: center;
+}
+
+.main-slots.top .cards-hand {
+    top: -8px;
+}
+
+.player-section .policy-slot {
+    background-position-x: -115.5px;
+    position: absolute;
+    bottom: -3px;
+    right: -13px;
+    box-shadow: 0 0 2px 0 black;
+}
+
+.shot-button {
+    color: #fb3535;
+    background: white;
+    border-radius: 25px;
+    user-select: none;
+    cursor: pointer;
+}
+
+.shot-mark {
+    color: #de0000;
+    user-select: none;
+    position: absolute;
+    top: 20px;
+}
+
+.shot-mark i {
+    font-size: 54px;
+}
+
+.player-slot.shot .avatar {
+    filter: grayscale(1);
+}
+
+.accept-button {
+    font-size: 50px;
+    background: #fefffc9c;
+    margin: 10px;
+    cursor: pointer;
+}
+
+.accept-button:hover {
+    background: #fefffcc9;
+}
+
+.policy-card.selected {
+    opacity: 0.5;
+    margin-bottom: -40px;
+}
+
+.not-hitler-card {
+    background: url(not-hitler.png);
+    width: 57px;
+    height: 33px;
+    position: absolute;
+    top: -10px;
+    right: -9px;
+}
+
+.accept-button.veto {    font-style: normal;
+    padding: 5.6px 8px;
+    font-size: 34px;
+    margin: 10px 5px;
+    font-family: sans-serif;
+    text-transform: uppercase;
+}
