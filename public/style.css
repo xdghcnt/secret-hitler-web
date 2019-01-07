@@ -685,6 +685,7 @@ body {
     background: #fefffc9c;
     margin: 10px;
     cursor: pointer;
+    user-select: none;
 }
 
 .accept-button:hover {

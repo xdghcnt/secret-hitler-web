@@ -209,7 +209,7 @@ class PlayerSlot extends React.Component {
 
 class Game extends React.Component {
     componentDidMount() {
-        this.testMode = true;
+        this.testMode = false;
         const initArgs = {};
         if (!localStorage.secretHitlerUserId || !localStorage.secretHitlerUserToken) {
             while (!localStorage.userName)
@@ -219,6 +219,7 @@ class Game extends React.Component {
         }
         if (!location.hash)
             history.replaceState(undefined, undefined, "#" + makeId());
+        initArgs.avatarId = localStorage.avatarId;
         initArgs.roomId = location.hash.substr(1);
         initArgs.userId = this.userId = localStorage.secretHitlerUserId;
         initArgs.token = this.userToken = localStorage.secretHitlerUserToken;

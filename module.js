@@ -82,6 +82,7 @@ function init(wsServer, path) {
                     rebalanced: false
                 },
                 players = state.players;
+            let playerRoles = {};
             if (testMode)
                 [1, 2, 3, 4, 5, 6, 7].forEach((ind) => {
                     room.playerSlots[ind] = `kek${ind}`;
@@ -102,7 +103,7 @@ function init(wsServer, path) {
                         send(user, "player-state", players);
                     else if (players[slot] && (players[slot].role === "f"
                         || (room.activeSlots.size < 7 && players[slot].role === "h")))
-                        send(user, "player-state", players);
+                        send(user, "player-state", Object.assign({}, playerRoles, {[slot]: players[slot]}));
                     else if (players[slot])
                         send(user, "player-state", {[slot]: players[slot]});
                     else
@@ -169,6 +170,10 @@ function init(wsServer, path) {
                                 players[getRandomPlayer([hitler, fasc1, fasc2])].role = "f";
                         }
                         room.currentPres = getRandomPlayer([]);
+                        playerRoles = {};
+                        room.activeSlots.forEach((slot) => {
+                            playerRoles[slot] = {role: players[slot].role};
+                        });
                         if (room.rebalanced) {
                             if (room.activeSlots.size === 6)
                                 room.fascTrack = 1;
@@ -201,7 +206,8 @@ function init(wsServer, path) {
                         room.playerSlots[slot] = users[index];
                     });
                 },
-                getNextSlot = (slot) => {
+                getNextPresSlot = () => {
+                    let slot = room.specialElection ? room.prevPres : room.currentPres;
                     slot++;
                     while (!players[slot] || room.playersShot.has(slot)) {
                         if (slot === 10)
@@ -260,10 +266,10 @@ function init(wsServer, path) {
                 nextPres = () => {
                     room.prevCan = room.currentCan;
                     room.currentCan = null;
-                    const nextPres = getNextSlot(room.specialElection ? room.prevPres : room.currentPres);
+                    const nextPres = getNextPresSlot();
                     room.prevPres = room.currentPres;
                     room.currentPres = nextPres;
-                    room.specialElection = null;
+                    room.specialElection = false;
                     Object.keys(players).forEach((slot) => {
                         players[slot].vote = null;
                     });
@@ -391,8 +397,8 @@ function init(wsServer, path) {
                                 }
                             } else {
                                 room.currentCan = null;
-                                room.specialElection = null;
-                                room.currentPres = getNextSlot(room.currentPres);
+                                room.currentPres = getNextPresSlot();
+                                room.specialElection = false;
                                 incrSkipTrack();
                                 if (room.phase !== "idle")
                                     startSelectCan();
