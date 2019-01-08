@@ -273,8 +273,6 @@ function init(wsServer, path) {
                     Object.keys(players).forEach((slot) => {
                         players[slot].vote = null;
                     });
-                    if (room.fascTrack === 5)
-                        room.vetoActive = true;
                     room.vetoRequest = null;
                     startSelectCan();
                 },
@@ -298,6 +296,8 @@ function init(wsServer, path) {
                         room.libWin = false;
                         endGame();
                     }
+                    if (room.fascTrack === 5)
+                        room.vetoActive = true;
                     processReshuffle();
                 },
                 processReshuffle = () => {
