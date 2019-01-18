@@ -187,7 +187,7 @@ body {
 
 .set-avatar-button i {
     position: absolute;
-    right: 3px;
+    left: 3px;
     bottom: 3px;
     color: #4c4c4c;
     background: rgba(212, 212, 212, 0.74);
@@ -215,7 +215,7 @@ body {
     display: flex;
     margin: 6px;
     padding: 5px;
-    background: #adadad;
+    background: #adadadc2;
     color: white;
     border-radius: 4px;
     z-index: 1;
@@ -257,40 +257,80 @@ body {
     background: #c65186;
 }
 
+.color-slot-0 {
+    color: #c65186;
+}
+
 .bg-color-1 {
     background: #9b9b9b;
+}
+
+.color-slot-1 {
+    color: #9b9b9b;
 }
 
 .bg-color-2 {
     background: #65371d;
 }
 
+.color-slot-2 {
+    color: #65371d;
+}
+
 .bg-color-3 {
     background: #b01008;
+}
+
+.color-slot-3 {
+    color: #ca0a00;
 }
 
 .bg-color-4 {
     background: #e16600;
 }
 
+.color-slot-4 {
+    color: #e16600;
+}
+
 .bg-color-9 {
     background: #75279b;
+}
+
+.color-slot-9 {
+    color: #75279b;
 }
 
 .bg-color-8 {
     background: #24367a;
 }
 
+.color-slot-8 {
+    color: #2752f5;
+}
+
 .bg-color-7 {
     background: #096060;
+}
+
+.color-slot-7 {
+    color: #096060;
 }
 
 .bg-color-6 {
     background: #257007;
 }
 
+.color-slot-6 {
+    color: #2d9603;
+}
+
 .bg-color-5 {
     background: #baba45;
+}
+
+.color-slot-5 {
+    color: #baba45;
 }
 
 .help-panel {
@@ -715,22 +755,128 @@ body {
     text-transform: uppercase;
 }
 
-.notes-section {
-    position: absolute;
-    right: 15px;
-    bottom: 15px;
-}
-
-.notes, #notebook {
-    white-space: pre;
-    background: rgba(255, 252, 245, 0.58);
-    width: 236px;
-    height: 210px;
-    padding: 10px;
-    box-sizing: border-box;
+.notes {
+    background: rgba(0, 0, 0, 0.85);
     font-weight: bold;
     font-family: monospace;
-    overflow-x: hidden;
-    overflow-y: auto;
-    border: none;
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+    opacity: 1;
+    font-size: 16px;
+    text-shadow: 0 0 3px black;
+    color: #cecac1;
+}
+
+.note-list {
+    padding: 10px;
+}
+
+.notes:hover {
+}
+
+.color-lib {
+    color: #0497d2;
+}
+
+.color-fasc {
+    color: #d60704;
+}
+
+.color-unknown {
+    color: gray;
+}
+
+.color-down {
+    color: gray;
+}
+
+.note-controls, .note-text {
+    display: inline-block;
+}
+
+.log-arrow {
+    margin: 0 3px;
+}
+
+.log-colon {
+    margin-right: 4px;
+}
+
+.note-controls {
+    margin-right: 3px;
+    cursor: pointer;
+    user-select: none;
+    font-size: 15px;
+    position: relative;
+    top: 3px;
+}
+
+.notes-hide {
+    cursor: pointer;
+    user-select: none;
+}
+
+.notes.hidden {
+}
+
+.notes.hidden .note-list {
+    display: none;
+}
+
+.note-item {
+    position: relative;
+}
+
+.note-list.expanded .note-item {
+    opacity: 0.3;
+}
+
+.note-list .note-item.expanded {
+    opacity: 1;
+}
+
+.note-expanded {
+    margin-left: 18px;
+}
+
+.log-space {
+    width: 4px;
+    display: inline-block;
+}
+
+.note-item.reclaimed .note-expanded .enact-line,
+.note-item.reclaimed .note-expanded .inspect-deck-line,
+.note-item.reclaimed .note-expanded .inspect-line {
+    text-decoration: line-through;
+    text-decoration-color: #cccccc;
+}
+
+.note-buttons {
+    padding-left: 4px;
+    padding-right: 35px;
+    display: flex;
+}
+
+.note-button {
+    border: 1px solid;
+    margin: -2px 3px;
+    padding: 1px 5px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.notes-footer {
+    display: flex;
+    align-items: center;
+    padding: 7px;
+}
+
+.votes-list {
+    max-width: 260px;
+}
+
+.note-expanded .enact-line, .note-expanded .inspect-line, .note-expanded .inspect-deck-line {
+    text-decoration: line-through;
 }

@@ -7,7 +7,7 @@ function init(wsServer, path) {
         app = wsServer.app,
         registry = wsServer.users,
         channel = "secret-hitler",
-        testMode = false;
+        testMode = true;
 
     app.post("/secret-hitler/upload-avatar", function (req, res) {
         registry.log(`secret-hitler - ${req.body.userId} - upload-avatar`);
@@ -71,15 +71,14 @@ function init(wsServer, path) {
                     skipTrack: 0,
                     libTrack: 0,
                     fascTrack: 0,
-                    voteLogs: {},
-                    voteLogsFull: [],
                     deckSize: state.deck.length,
                     discardSize: state.discardDeck.length,
                     libWin: null,
                     fCount: 11,
                     lCount: 6,
                     shufflePlayers: true,
-                    rebalanced: false
+                    rebalanced: false,
+                    whiteBoard: []
                 },
                 players = state.players;
             let playerRoles = {};
@@ -121,12 +120,10 @@ function init(wsServer, path) {
                 },
                 startGame = () => {
                     const playersCount = room.playerSlots.filter((user) => user !== null).length;
-                    if (playersCount > 3) {
+                    if (isEnoughPlayers()) {
                         room.libTrack = 0;
                         room.fascTrack = 0;
                         room.skipTrack = 0;
-                        room.voteLogs = {};
-                        room.voteLogsFull = [];
                         room.activeSlots = new JSONSet();
                         room.teamsLocked = true;
                         room.libWin = null;
@@ -139,6 +136,7 @@ function init(wsServer, path) {
                         room.playersShot = new JSONSet();
                         room.playersInspected = new JSONSet();
                         room.playersNotHitler = new JSONSet();
+                        room.whiteBoard = [];
                         room.vetoActive = false;
                         room.vetoRequest = null;
                         room.specialElection = false;
@@ -282,10 +280,26 @@ function init(wsServer, path) {
                         room.skipTrack = 0;
                         room.prevCan = null;
                         room.prevPres = null;
-                        enactCard(state.deck.splice(0, 1)[0])
+                        const card = state.deck.splice(0, 1)[0];
+                        room.whiteBoard.push({type: "topdeck", card: card.toUpperCase()});
+                        enactCard(card, true)
                     }
                 },
-                enactCard = (card) => {
+                enactCard = (card, isTopdeck) => {
+                    if (!isTopdeck)
+                        room.whiteBoard.push({
+                            type: "enact",
+                            pres: room.currentPres,
+                            can: room.currentCan,
+                            presClaimed: false,
+                            canClaimed: card === "f",
+                            card: card.toUpperCase(),
+                            votes: {
+                                ja: [...room.activeSlots].filter((slot) => players[slot].vote),
+                                nein: [...room.activeSlots].filter((slot) => !players[slot].vote)
+                            },
+                            claims: [["???", "??", card === "f" ? "FF" : "??", card.toUpperCase()]]
+                        });
                     room.vetoRequest = null;
                     room.skipTrack = 0;
                     room[(card === "l" ? "libTrack" : "fascTrack")] += 1;
@@ -301,8 +315,10 @@ function init(wsServer, path) {
                     processReshuffle();
                 },
                 processReshuffle = () => {
-                    if (state.deck.length < 3)
+                    if (state.deck.length < 3) {
+                        room.whiteBoard.push({type: "reshuffle"});
                         state.deck.push(...state.discardDeck.splice(0));
+                    }
                 },
                 isEnoughPlayers = () => room.playerSlots.filter((user) => user !== null).length > 4,
                 endGame = () => {
@@ -387,8 +403,8 @@ function init(wsServer, path) {
                             [...room.playersVoted].forEach((slot) => {
                                 room.playersVotes[slot] = players[slot].vote;
                             });
-                            if (Object.keys(players).filter((slot) => players[slot].vote).length > Object.keys(players).filter((it) =>
-                                !room.playersShot.has(it)).length / 2) {
+                            if ([...room.activeSlots].filter((slot) => players[slot].vote).length > [...room.activeSlots].filter((slot) =>
+                                !room.playersShot.has(slot)).length / 2) {
                                 if (room.fascTrack >= 3 && players[room.currentCan].role === "h") {
                                     room.libWin = false;
                                     endGame();
@@ -398,10 +414,19 @@ function init(wsServer, path) {
                                     startPresDraw();
                                 }
                             } else {
+                                room.whiteBoard.push({
+                                    type: "skip",
+                                    pres: room.currentPres,
+                                    can: room.currentCan,
+                                    votes: {
+                                        ja: [...room.activeSlots].filter((slot) => players[slot].vote),
+                                        nein: [...room.activeSlots].filter((slot) => !players[slot].vote)
+                                    }
+                                });
+                                incrSkipTrack();
                                 room.currentCan = null;
                                 room.currentPres = getNextPresSlot();
                                 room.specialElection = false;
-                                incrSkipTrack();
                                 if (room.phase !== "idle")
                                     startSelectCan();
                             }
@@ -439,6 +464,12 @@ function init(wsServer, path) {
                             party: players[inspectSlot].role === "l" ? "l" : "f"
                         };
                         room.playersInspected.add(inspectSlot);
+                        room.whiteBoard.push({
+                            type: "inspect",
+                            pres: room.currentPres,
+                            slot: inspectSlot,
+                            claims: ["?"]
+                        });
                         room.presAction = null;
                         sendStateSlot(slot);
                         nextPres();
@@ -449,6 +480,7 @@ function init(wsServer, path) {
                         && !room.playersShot.has(shootSlot) && slot !== shootSlot) {
                         room.playersShot.add(shootSlot);
                         room.presAction = null;
+                        room.whiteBoard.push({type: "shot", pres: room.currentPres, slot: shootSlot});
                         if (players[shootSlot].role === "h") {
                             room.libWin = true;
                             endGame();
@@ -464,6 +496,7 @@ function init(wsServer, path) {
                         room.currentCan = null;
                         room.presAction = null;
                         room.specialElection = true;
+                        room.whiteBoard.push({type: "gives-pres", pres: presSlot})
                         startSelectCan();
                     }
                 },
@@ -471,6 +504,7 @@ function init(wsServer, path) {
                     if (room.presAction === "inspect-deck" && room.currentPres === slot) {
                         room.presAction = null;
                         state.deck.unshift(...players[room.currentPres].cards.splice(0));
+                        room.whiteBoard.push({type: "inspect-deck", pres: room.currentPres, claims: ["?"]});
                         sendStateSlot(room.currentPres);
                         nextPres();
                     }
@@ -488,12 +522,62 @@ function init(wsServer, path) {
                             sendStateSlot(room.currentPres);
                             processReshuffle();
                             incrSkipTrack();
+                            room.whiteBoard.push({type: "veto", pres: room.currentPres, can: room.currentCan});
                             if (room.libWin === null)
                                 nextPres();
                         } else
                             room.vetoRequest = false;
                         update();
                     }
+                },
+                "claim": (slot, index, claim) => {
+                    const action = room.whiteBoard[index];
+                    if (action
+                        && (action.pres === slot || action.can === slot)
+                        && ((action.type === "enact" && ~(action.pres === slot
+                                ? ["FFF", "FFL", "FLL>FL", "FLL>LL", "LLL"] : ["FF", "FL", "LL"]).indexOf(claim))
+                            || (action.type === "inspect" && ~["f", "l"].indexOf(claim))
+                            || (action.type === "inspect-deck"
+                                && ~["FFF", "FFL", "FLF", "LFF", "FLL", "LFL", "LLF", "LLL"].indexOf(claim))
+                        )) {
+                        let lastClaim = action.claims[action.claims.length - 1];
+                        if (action.type !== "enact" && lastClaim !== claim) {
+                            if (action.claims.length > 1)
+                                action.reclaimed = true;
+                            action.claims.push(claim);
+                        }
+                        else {
+                            const
+                                newClaim = lastClaim.slice(),
+                                reclaim = (action.presClaimed && action.pres === slot)
+                                    || (action.canClaimed && action.pres === slot);
+                            action.reclaimed = true;
+                            if (action.pres === slot) {
+                                newClaim[0] = claim.split(">")[0];
+                                if (claim.split(">")[1])
+                                    newClaim[1] = claim.split(">")[1];
+                                else if (claim === "FFF")
+                                    newClaim[1] = "FF";
+                                else if (claim === "FFL")
+                                    newClaim[1] = "FL";
+                                else if (claim === "LLL")
+                                    newClaim[1] = "LL";
+                                action.presClaimed = true;
+                            }
+                            else if (action.can === slot) {
+                                newClaim[2] = claim;
+                                action.canClaimed = true;
+                            }
+                            if (!(lastClaim[0] === newClaim[0]
+                                && lastClaim[1] === newClaim[1]
+                                && lastClaim[2] === newClaim[2])) {
+                                action.claims.push(newClaim);
+                                if (reclaim)
+                                    action.reclaimed = true;
+                            }
+                        }
+                    }
+                    update();
                 },
                 "test-command": (slot, command) => {
                     if (testMode) {
@@ -574,12 +658,6 @@ function init(wsServer, path) {
                         room.spectators.add(user);
                         update();
                         sendState(user);
-                    }
-                },
-                "notes": (user, notes) => {
-                    if (user === room.hostId) {
-                        room.notes = notes;
-                        update();
                     }
                 }
             };
