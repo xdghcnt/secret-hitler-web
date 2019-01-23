@@ -182,7 +182,7 @@ class PlayerSlot extends React.Component {
                         </div>
                     </div>
                     <div className="player-table-section">
-                        <div className="vote-section">
+                        <div className="vote-section" style={{transform: `rotateZ(${data.votesRotate[slot]}deg)`}}>
                             {(data.playersVotes && ~data.playersVoted.indexOf(slot))
                                 ? (<div className={`vote-card ${data.playersVotes[slot] ? "ja" : "nein"}`}/>)
                                 : (~data.playersVoted.indexOf(slot)
@@ -252,6 +252,14 @@ class NoteItem extends React.Component {
                         className={`color-slot-${item.pres}`}>{slotNames[item.pres]}</span>{space}inspects{space}deck{colon}
                         {line.split("").map((card) => cardTypes[card])}
                     </div>;
+                },
+                getVotesLine = (votesList, downVotesList, title) => {
+                    return votesList.length
+                        ? <div className="votes-list">{title}{colon}{(votesList.length && downVotesList.length)
+                            ? votesList.map((slot) => <span
+                                className={`color-slot-${slot}`}>{slotNames[slot]}{space}</span>)
+                            : "All"}</div>
+                        : "";
                 };
             let
                 note = "",
@@ -275,8 +283,8 @@ class NoteItem extends React.Component {
             else if (item.type === "gives-pres")
                 note = <span>
                     <span
-                        className={`color-slot-${item.pres}`}>{slotNames[item.pres]}</span>{space}gives{space}to{space}<span
-                    className={`color-slot-${item.slot}`}>{slotNames[item.slot]}</span>
+                        className={`color-slot-${item.pres}`}>{slotNames[item.pres]}</span>{space}gives{space}pres{space}to{space}
+                    <span className={`color-slot-${item.slot}`}>{slotNames[item.slot]}</span>
                 </span>;
             else if (item.type === "veto")
                 note = <span><span className={`color-slot-${item.pres}`}>{slotNames[item.pres]}</span>{arrow}
@@ -284,12 +292,10 @@ class NoteItem extends React.Component {
             else if (item.type === "inspect-deck")
                 note = getInspectDeckLine(lastLine);
             if (data.whiteBoardExpanded === index)
-                if (item.type === "enact" || item.type === "skip")
+                if (~["enact", "skip", "veto"].indexOf(item.type))
                     noteExpanded = <div className="note-expanded">
-                        <div className="votes-list">Ja{colon}{item.votes.ja.map((slot) => <span
-                            className={`color-slot-${slot}`}>{slotNames[slot]}{space}</span>)}</div>
-                        <div className="votes-list">Nein{colon}{item.votes.nein.map((slot) => <span
-                            className={`color-slot-${slot}`}>{slotNames[slot]}{space}</span>)}</div>
+                        {getVotesLine(item.votes.ja, item.votes.nein, "Ja")}
+                        {getVotesLine(item.votes.nein, item.votes.ja, "Nein")}
                         {item.type === "enact" ? prevLines.map(getEnactLine) : ""}
                     </div>;
                 else if (item.type === "inspect")
@@ -311,7 +317,7 @@ class NoteItem extends React.Component {
                         onClick={() => game.toggleWhiteBoardExpanded(index)}>
                         {data.whiteBoardExpanded !== index ? "add" : "remove"}
                     </i>) : ""}
-                    {item.reclaimed ? (<span>(Rev){space}</span>) : ""}
+                    {item.reclaimed ? (<span title="Revised">(R){space}</span>) : ""}
                     <div className="note-text">
                         {note}
                     </div>
@@ -336,24 +342,26 @@ class NoteButtons extends React.Component {
                     l: <span className="color-lib">Liberal</span>,
                     ">": <span className="log-arrow">&gt;</span>
                 };
-            let actionIndex, action, buttons = [];
+            let actionIndex, action, isEdit, buttons = [];
             if (data.whiteBoardExpanded != null) {
                 actionIndex = data.whiteBoardExpanded;
                 action = data.whiteBoard[actionIndex];
+                isEdit = true;
                 if (!(data.userSlot === action.pres || data.userSlot === action.can))
                     action = null;
             } else
                 data.whiteBoard.forEach((it, index) => {
                     if (it.claims
-                        && it.claims.length === 1
-                        && (data.userSlot === it.pres
-                        || ((data.userSlot === it.pres && !it.presClaimed)
-                            || data.userSlot === it.can && !it.canClaimed))) {
+                        && (it.claims.length === 1 || it.type === "enact")
+                        && ((data.userSlot === it.pres && it.type !== "enact")
+                            || ((data.userSlot === it.pres && !it.presClaimed)
+                                || (data.userSlot === it.can && !it.canClaimed
+                                    && it.claims[it.claims.length - 1][3] !== "F")))) {
                         action = it;
                         actionIndex = index;
                     }
                 });
-            if (action)
+            if (action && !~data.playersShot.indexOf(data.userSlot))
                 if (action.type === "inspect")
                     buttons = ["l", "f"];
                 else if (action.type === "inspect-deck")
@@ -361,16 +369,17 @@ class NoteButtons extends React.Component {
                 else if (action.type === "enact")
                     if (action.pres === data.userSlot)
                         buttons = {
-                            F: ["FFF", "FFL", "FLL>FL"],
+                            F: ["FFF", "FFL", "FLL>FL"].concat(isEdit ? ["FFL>FF"] : []),
                             L: ["FFL", "FLL>FL", "FLL>LL", "LLL"]
                         }[action.claims[0][3]];
-                    else if (action.can === data.userSlot && action.claims[0][3] !== "F")
+                    else if (action.can === data.userSlot)
                         buttons = {
                             F: ["FF", "FL"],
                             L: ["FL", "LL"]
                         }[action.claims[0][3]];
             return <div className="note-buttons">
-                {buttons.length ? (action.claims.length > 1 ? "Edit:" : "Claim:") : ""}
+                <div
+                    className="note-buttons-title">{buttons.length ? (isEdit ? "Edit:" : "Claim:") : ""}</div>
                 {buttons.map((it) => (
                     <div className="note-button" onClick={() => game.handleClickClaim(actionIndex, it)}>
                         {it.split("").map((card) => cardTypes[card])}
@@ -402,7 +411,9 @@ class Game extends React.Component {
         initArgs.userName = localStorage.userName;
         this.socket = window.socket.of("secret-hitler");
         this.socket.on("state", (state) => {
-            this.processSounds(this.state, state);
+            this.processEffects(this.state, state);
+            if (this.state.phase === "select-can" && state.phase === "voting")
+                this.votesRotateUpdate();
             this.setState(Object.assign(state, {
                 userId: this.userId,
                 userSlot: ~state.playerSlots.indexOf(this.userId)
@@ -411,7 +422,8 @@ class Game extends React.Component {
                 players: this.state.players || {},
                 cardSelected: this.state.cardSelected,
                 whiteBoardExpanded: this.state.whiteBoardExpanded,
-                whiteBoardHidden: this.state.whiteBoardHidden
+                whiteBoardHidden: this.state.whiteBoardHidden,
+                votesRotate: this.state.votesRotate
             }));
         });
         this.socket.on("player-state", (players) => {
@@ -447,9 +459,20 @@ class Game extends React.Component {
         this.tapSound.volume = 0.3;
         this.tapSoundL = new Audio("/secret-hitler/tap_l.ogg");
         this.tapSoundR = new Audio("/secret-hitler/tap_r.ogg");
+        this.votesRotateUpdate();
     }
 
-    processSounds(prev, current) {
+    votesRotateUpdate() {
+        this.state.votesRotate = Array(10).fill().map(() => Math.floor(Math.random() * 12) - 6);
+    }
+
+    processEffects(prev, current) {
+        let changedSlot = null;
+        if (prev.inited && prev.phase === "voting" && prev.playersVoted.length !== current.playersVoted.length)
+            changedSlot = prev.playersVoted.filter(x => !current.playersVoted.includes(x))
+                .concat(current.playersVoted.filter(x => !prev.playersVoted.includes(x)))[0];
+        if (changedSlot !== null)
+            this.state.votesRotate[changedSlot] = Math.floor(Math.random() * 12) - 6;
         if (!this.isMuted() && prev.inited) {
             if (prev.playersShot.length > current.playersShot.length)
                 this.plateSetSound.play();
@@ -465,10 +488,8 @@ class Game extends React.Component {
                 this.dealSound.play();
             else if (prev.fascTrack < current.fascTrack || prev.libTrack < current.libTrack)
                 this.tapSound.play();
-            else if (prev.phase === "voting" && prev.playersVoted.length !== current.playersVoted.length) {
+            else if (changedSlot !== null) {
                 const
-                    changedSlot = prev.playersVoted.filter(x => !current.playersVoted.includes(x))
-                        .concat(current.playersVoted.filter(x => !prev.playersVoted.includes(x)))[0],
                     volR = (changedSlot % 5) / 4,
                     volL = 1 - volR;
                 this.tapSoundL.volume = Math.max(changedSlot < 5 ? volL : volR, 0.2) * 0.3;
@@ -706,7 +727,8 @@ class Game extends React.Component {
                     isHost = data.hostId === data.userId,
                     parentDir = location.pathname.match(/(.+?)\//)[1],
                     userData = data.players && data.players[data.userSlot],
-                    notEnoughPlayers = data.phase === "idle" && data.playerSlots.filter((slot) => slot !== null).length < 5,
+                    slotsCount = data.playerSlots.filter((slot) => slot !== null).length,
+                    notEnoughPlayers = data.phase === "idle" && slotsCount < 5,
                     playerVote = data.players[data.userSlot] && data.players[data.userSlot].vote,
                     playerCount = data.activeSlots.length,
                     gameType = playerCount < 7 ? "small" : (playerCount < 9 ? "medium" : "large"),
@@ -720,7 +742,14 @@ class Game extends React.Component {
                         medium: ["", "", "", "", ""],
                         large: ["", "", "", "", ""],
                     }[gameType],
-                    actions = ["", "inspect-deck", "inspect", "election", "shooting", "shooting-veto"];
+                    actions = ["", "inspect-deck", "inspect", "election", "shooting", "shooting-veto"],
+                    welcomeMessage = <div className="welcome-message">
+                        {data.phase === "idle" && data.libWin === null
+                            ? (slotsCount >= 5
+                                ? `${isHost ? "You" : "Host"} can start ${slotsCount} player game`
+                                : "At least 5 players needed")
+                            : <span>{data.activeSlots.length} player game started</span>}
+                    </div>;
                 let status = this.getStatus();
                 return (
                     <div className={`game`}>
@@ -817,9 +846,13 @@ class Game extends React.Component {
                             </div>
                             <div className={`notes ${this.state.whiteBoardHidden ? "hidden" : ""}`}>
                                 <div className={`note-list ${data.whiteBoardExpanded != null ? "expanded" : ""}`}>
-                                    Logs:
+                                    {welcomeMessage}
                                     {data.whiteBoard.map((it, ind) =>
                                         (<NoteItem item={it} data={data} game={this} index={ind}/>))}
+                                    {data.libWin !== null ? (
+                                        <div><span className={`color-${data.libWin ? "lib" : "fasc"}`}>
+                                            {data.libWin ? "Liberals" : "Fascists"}</span> wins!
+                                        </div>) : ""}
                                 </div>
                                 <div className="notes-footer">
                                     <i

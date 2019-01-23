@@ -292,7 +292,7 @@ function init(wsServer, path) {
                             pres: room.currentPres,
                             can: room.currentCan,
                             presClaimed: false,
-                            canClaimed: card === "f",
+                            canClaimed: false,
                             card: card.toUpperCase(),
                             votes: {
                                 ja: [...room.activeSlots].filter((slot) => players[slot].vote),
@@ -496,7 +496,7 @@ function init(wsServer, path) {
                         room.currentCan = null;
                         room.presAction = null;
                         room.specialElection = true;
-                        room.whiteBoard.push({type: "gives-pres", pres: presSlot})
+                        room.whiteBoard.push({type: "gives-pres", pres: slot, slot: presSlot});
                         startSelectCan();
                     }
                 },
@@ -522,7 +522,15 @@ function init(wsServer, path) {
                             sendStateSlot(room.currentPres);
                             processReshuffle();
                             incrSkipTrack();
-                            room.whiteBoard.push({type: "veto", pres: room.currentPres, can: room.currentCan});
+                            room.whiteBoard.push({
+                                type: "veto",
+                                pres: room.currentPres,
+                                can: room.currentCan,
+                                votes: {
+                                    ja: [...room.activeSlots].filter((slot) => players[slot].vote),
+                                    nein: [...room.activeSlots].filter((slot) => !players[slot].vote)
+                                }
+                            });
                             if (room.libWin === null)
                                 nextPres();
                         } else
@@ -535,23 +543,24 @@ function init(wsServer, path) {
                     if (action
                         && (action.pres === slot || action.can === slot)
                         && ((action.type === "enact" && ~(action.pres === slot
-                                ? ["FFF", "FFL", "FLL>FL", "FLL>LL", "LLL"] : ["FF", "FL", "LL"]).indexOf(claim))
+                                ? ["FFF", "FFL", "FLL>FL", "FLL>LL", "LLL", "FFL>FF"]
+                                : ["FF", "FL", "LL"]).indexOf(claim))
                             || (action.type === "inspect" && ~["f", "l"].indexOf(claim))
                             || (action.type === "inspect-deck"
                                 && ~["FFF", "FFL", "FLF", "LFF", "FLL", "LFL", "LLF", "LLL"].indexOf(claim))
-                        )) {
+                        )
+                        && !room.playersShot.has(slot)) {
                         let lastClaim = action.claims[action.claims.length - 1];
                         if (action.type !== "enact" && lastClaim !== claim) {
                             if (action.claims.length > 1)
                                 action.reclaimed = true;
                             action.claims.push(claim);
                         }
-                        else {
+                        else if (action.type === "enact") {
                             const
                                 newClaim = lastClaim.slice(),
                                 reclaim = (action.presClaimed && action.pres === slot)
-                                    || (action.canClaimed && action.pres === slot);
-                            action.reclaimed = true;
+                                    || (action.canClaimed && action.can === slot);
                             if (action.pres === slot) {
                                 newClaim[0] = claim.split(">")[0];
                                 if (claim.split(">")[1])
@@ -581,19 +590,10 @@ function init(wsServer, path) {
                 },
                 "test-command": (slot, command) => {
                     if (testMode) {
-                        if (room.phase === "voting" && command === "vote-pass")
+                        if (room.phase === "voting" && ~["vote-pass", "vote-fail"].indexOf(command))
                             room.activeSlots.forEach((activeSlot) => {
-                                if (slot !== activeSlot && !room.playersShot.has(activeSlot)) {
-                                    room.playersVoted.add(activeSlot);
-                                    players[activeSlot].vote = true;
-                                }
-                            });
-                        else if (room.phase === "voting" && command === "vote-fail")
-                            room.activeSlots.forEach((activeSlot) => {
-                                if (slot !== activeSlot && !room.playersShot.has(activeSlot)) {
-                                    room.playersVoted.add(activeSlot);
-                                    players[activeSlot].vote = false;
-                                }
+                                if (slot !== activeSlot && !room.playersShot.has(activeSlot))
+                                    this.slotEventHandlers.vote(activeSlot, command === "vote-pass");
                             });
                         update();
                         updateState();

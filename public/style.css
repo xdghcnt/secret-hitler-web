@@ -759,7 +759,7 @@ body {
     background: rgba(0, 0, 0, 0.85);
     font-weight: bold;
     font-family: monospace;
-    position: absolute;
+    position: fixed;
     right: 0;
     bottom: 0;
     z-index: 1;
@@ -767,10 +767,12 @@ body {
     font-size: 16px;
     text-shadow: 0 0 3px black;
     color: #cecac1;
+    width: 304px;
 }
 
 .note-list {
-    padding: 10px;
+    padding: 8px;
+    padding-bottom: 0;
 }
 
 .notes:hover {
@@ -857,11 +859,12 @@ body {
     padding-left: 4px;
     padding-right: 35px;
     display: flex;
+    flex-wrap: wrap;
 }
 
 .note-button {
     border: 1px solid;
-    margin: -2px 3px;
+    margin: 2px 3px;
     padding: 1px 5px;
     cursor: pointer;
     user-select: none;
@@ -870,7 +873,9 @@ body {
 .notes-footer {
     display: flex;
     align-items: center;
-    padding: 7px;
+    padding: 5px;
+    min-height: 37px;
+    box-sizing: border-box;
 }
 
 .votes-list {
@@ -880,3 +885,21 @@ body {
 .note-expanded .enact-line, .note-expanded .inspect-line, .note-expanded .inspect-deck-line {
     text-decoration: line-through;
 }
+
+.note-buttons-title {
+    padding-top: 4px;
+}
+
+.notes.hidden {
+    width: auto;
+}
+
+.notes.hidden .note-buttons {
+    display: none;
+}
+
+.notes.hidden .notes-footer {
+    padding: 6px;
+    width: 74px;
+}
+
