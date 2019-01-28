@@ -7,7 +7,7 @@ function init(wsServer, path) {
         app = wsServer.app,
         registry = wsServer.users,
         channel = "secret-hitler",
-        testMode = true;
+        testMode = process.argv[2] === "debug";
 
     app.post("/secret-hitler/upload-avatar", function (req, res) {
         registry.log(`secret-hitler - ${req.body.userId} - upload-avatar`);
@@ -38,6 +38,28 @@ function init(wsServer, path) {
         constructor(hostId, hostData, userRegistry) {
             super();
             const
+                getResetParams = () => ({
+                    libTrack: 0,
+                    fascTrack: 3,
+                    skipTrack: 0,
+                    activeSlots: new JSONSet(),
+                    presAction: null,
+                    prevPres: null,
+                    prevCan: null,
+                    currentPres: null,
+                    currentCan: null,
+                    playersVotes: null,
+                    playersVoted: new JSONSet(),
+                    playersShot: new JSONSet(),
+                    playersInspected: new JSONSet(),
+                    playersNotHitler: new JSONSet(),
+                    whiteBoard: [],
+                    vetoActive: false,
+                    vetoRequest: null,
+                    specialElection: false,
+                    fCount: 11,
+                    lCount: 6
+                }),
                 state = {
                     players: {},
                     deck: [],
@@ -54,33 +76,16 @@ function init(wsServer, path) {
                     teamsLocked: false,
                     playerAvatars: {},
                     phase: "idle",
-                    presAction: null, // inspect, inspect-deck, election, shooting
-                    prevPres: null,
-                    prevCan: null,
-                    currentPres: null,
-                    currentCan: null,
-                    playersVotes: null,
-                    playersVoted: new JSONSet(),
-                    playersShot: new JSONSet(),
-                    playersInspected: new JSONSet(),
-                    playersNotHitler: new JSONSet(),
-                    activeSlots: new JSONSet(),
-                    vetoRequest: null,
-                    vetoActive: false,
-                    specialElection: false,
-                    skipTrack: 0,
-                    libTrack: 0,
-                    fascTrack: 0,
                     deckSize: state.deck.length,
                     discardSize: state.discardDeck.length,
                     libWin: null,
-                    fCount: 11,
-                    lCount: 6,
                     shufflePlayers: true,
                     rebalanced: false,
-                    whiteBoard: []
+                    testMode
                 },
+                resetRoom = () => Object.assign(room, getResetParams()),
                 players = state.players;
+            resetRoom();
             let playerRoles = {};
             if (testMode)
                 [1, 2, 3, 4, 5, 6, 7].forEach((ind) => {
@@ -121,29 +126,11 @@ function init(wsServer, path) {
                 startGame = () => {
                     const playersCount = room.playerSlots.filter((user) => user !== null).length;
                     if (isEnoughPlayers()) {
-                        room.libTrack = 0;
-                        room.fascTrack = 0;
-                        room.skipTrack = 0;
-                        room.activeSlots = new JSONSet();
-                        room.teamsLocked = true;
-                        room.libWin = null;
-                        room.presAction = null;
-                        room.prevPres = null;
-                        room.prevCan = null;
-                        room.currentCan = null;
-                        room.playersVotes = null;
-                        room.playersVoted = new JSONSet();
-                        room.playersShot = new JSONSet();
-                        room.playersInspected = new JSONSet();
-                        room.playersNotHitler = new JSONSet();
-                        room.whiteBoard = [];
-                        room.vetoActive = false;
-                        room.vetoRequest = null;
-                        room.specialElection = false;
-                        room.fCount = 11;
-                        room.lCount = 6;
+                        resetRoom();
                         if (room.libWin !== null && room.shufflePlayers)
                             shufflePlayers();
+                        room.libWin = null;
+                        room.teamsLocked = true;
                         room.playerSlots.forEach((player, slot) => {
                             if (player != null) {
                                 room.activeSlots.add(slot);
@@ -286,20 +273,12 @@ function init(wsServer, path) {
                     }
                 },
                 enactCard = (card, isTopdeck) => {
-                    if (!isTopdeck)
-                        room.whiteBoard.push({
-                            type: "enact",
-                            pres: room.currentPres,
-                            can: room.currentCan,
-                            presClaimed: false,
-                            canClaimed: false,
-                            card: card.toUpperCase(),
-                            votes: {
-                                ja: [...room.activeSlots].filter((slot) => players[slot].vote),
-                                nein: [...room.activeSlots].filter((slot) => !players[slot].vote)
-                            },
-                            claims: [["???", "??", card === "f" ? "FF" : "??", card.toUpperCase()]]
-                        });
+                    if (!isTopdeck) {
+                        const lastClaim = room.whiteBoard[room.whiteBoard.length - 1];
+                        lastClaim.type = "enact";
+                        lastClaim.claims = [["???", "??", card === "f" ? "FF" : "??", card.toUpperCase()]];
+                        lastClaim.card = card.toUpperCase();
+                    }
                     room.vetoRequest = null;
                     room.skipTrack = 0;
                     room[(card === "l" ? "libTrack" : "fascTrack")] += 1;
@@ -399,12 +378,24 @@ function init(wsServer, path) {
                         }
                         sendStateSlot(slot);
                         if (room.playersVoted.size === (room.activeSlots.size - room.playersShot.size)) {
+                            const votePassed = [...room.activeSlots].filter((slot) => players[slot].vote).length > [...room.activeSlots].filter((slot) =>
+                                !room.playersShot.has(slot)).length / 2;
                             room.playersVotes = {};
                             [...room.playersVoted].forEach((slot) => {
                                 room.playersVotes[slot] = players[slot].vote;
                             });
-                            if ([...room.activeSlots].filter((slot) => players[slot].vote).length > [...room.activeSlots].filter((slot) =>
-                                !room.playersShot.has(slot)).length / 2) {
+                            room.whiteBoard.push({
+                                type: votePassed ? "pre-enact" : "skip",
+                                pres: room.currentPres,
+                                can: room.currentCan,
+                                presClaimed: false,
+                                canClaimed: false,
+                                votes: {
+                                    ja: [...room.activeSlots].filter((slot) => players[slot].vote),
+                                    nein: [...room.activeSlots].filter((slot) => !players[slot].vote)
+                                }
+                            });
+                            if (votePassed) {
                                 if (room.fascTrack >= 3 && players[room.currentCan].role === "h") {
                                     room.libWin = false;
                                     endGame();
@@ -414,15 +405,6 @@ function init(wsServer, path) {
                                     startPresDraw();
                                 }
                             } else {
-                                room.whiteBoard.push({
-                                    type: "skip",
-                                    pres: room.currentPres,
-                                    can: room.currentCan,
-                                    votes: {
-                                        ja: [...room.activeSlots].filter((slot) => players[slot].vote),
-                                        nein: [...room.activeSlots].filter((slot) => !players[slot].vote)
-                                    }
-                                });
                                 incrSkipTrack();
                                 room.currentCan = null;
                                 room.currentPres = getNextPresSlot();
@@ -522,15 +504,7 @@ function init(wsServer, path) {
                             sendStateSlot(room.currentPres);
                             processReshuffle();
                             incrSkipTrack();
-                            room.whiteBoard.push({
-                                type: "veto",
-                                pres: room.currentPres,
-                                can: room.currentCan,
-                                votes: {
-                                    ja: [...room.activeSlots].filter((slot) => players[slot].vote),
-                                    nein: [...room.activeSlots].filter((slot) => !players[slot].vote)
-                                }
-                            });
+                            room.whiteBoard[room.whiteBoard.length - 1].type = "veto";
                             if (room.libWin === null)
                                 nextPres();
                         } else
