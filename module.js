@@ -40,7 +40,7 @@ function init(wsServer, path) {
             const
                 getResetParams = () => ({
                     libTrack: 0,
-                    fascTrack: 3,
+                    fascTrack: 0,
                     skipTrack: 0,
                     activeSlots: new JSONSet(),
                     presAction: null,

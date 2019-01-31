@@ -187,11 +187,17 @@ body {
 
 .set-avatar-button i {
     position: absolute;
-    left: 3px;
-    bottom: 3px;
+    left: 0px;
+    bottom: 0px;
     color: #4c4c4c;
-    background: rgba(212, 212, 212, 0.74);
+    background: rgb(141, 141, 141);
     z-index: 2;
+    padding: 1px 3px;
+}
+
+.set-avatar-button i:hover {
+    color: #222222;
+    cursor: pointer;
 }
 
 .player-name {
@@ -538,7 +544,7 @@ body {
 }
 
 .policy-card {
-    width: 114px;
+    width: 111px;
     height: 159px;
     background: url(policy-cards.png);
     margin: 8px;
@@ -550,11 +556,11 @@ body {
 }
 
 .policy-card.l {
-    background-position-x: -107px;
+    background-position-x: -109px;
 }
 
 .policy-card.f {
-    background-position-x: -217px;
+    background-position-x: -219px;
 }
 
 .player-role.check-button {
@@ -903,3 +909,61 @@ body {
     width: 74px;
 }
 
+.hand-section .policy-card {
+    border-radius: 10px;
+}
+
+.vote-marks-section {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    user-select: none;
+}
+
+.vote-marks {
+    position: absolute;
+    bottom: 4px;
+    left: 126px;
+    display: flex;
+}
+
+.main-slots.top .vote-marks {
+    top: 8px;
+}
+
+.vote-mark {
+    line-height: 7px;
+    width: 13px;
+    display: block;
+}
+
+.main-slots.bottom .vote-marks {
+    bottom: 8px;
+}
+
+.game-track .policy-card.flipped {
+    transform: scaleX(0);
+    transition: transform 0.3s;
+}
+
+.game-track .policy-card {
+    transform: scaleX(1);
+}
+
+.vote-mark:hover {
+    text-shadow: white 0 0 3px;
+    cursor: pointer;
+}
+
+.pres-highlight {
+    text-shadow: white 0 0 3px;
+}
+
+.pres-highlight-vote {
+    border: 1px solid;
+    padding-left: 4px;
+    margin-right: 4px;
+    background: #ffffff24;
+}

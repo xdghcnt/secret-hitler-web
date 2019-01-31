@@ -97,7 +97,17 @@ class PlayerSlot extends React.Component {
                 isOnlyFive = (data.activeSlots.length - data.playersShot.length) <= 5,
                 roles = ["unknown", "check", "l", "f", "h", "f1", "f2", "f3", "l1", "l2", "l3", "l4", "l5", "l6"],
                 plates = ["pres", "can", "prev-pres", "prev-can"],
-                actions = ["", "inspect-deck", "inspect", "election", "shooting", "shooting-veto"];
+                actions = ["", "inspect-deck", "inspect", "election", "shooting", "shooting-veto"],
+                voteMarksUp = [],
+                voteMarksDown = [];
+            data.whiteBoard.forEach((it, index) => {
+                if (it.votes) {
+                    if (it.type === "skip" && ~it.votes.ja.indexOf(slot))
+                        voteMarksUp.push({pres: it.pres, whiteBoardIndex: index});
+                    else if (it.type !== "skip" && ~it.votes.nein.indexOf(slot))
+                        voteMarksDown.push({pres: it.pres, whiteBoardIndex: index});
+                }
+            });
             let role, plate;
             if (slotData && slotData.role === "h")
                 role = "h";
@@ -162,7 +172,7 @@ class PlayerSlot extends React.Component {
                             {player === data.userId
                                 ? (<div className="set-avatar-button">
                                     <i onClick={() => game.handleClickSetAvatar()}
-                                       className="toggle-theme material-icons settings-button">edit</i>
+                                       className="toggle-theme material-icons">edit</i>
                                 </div>)
                                 : ""}
                             {(data.presAction === "shooting" && ~data.activeSlots.indexOf(slot)
@@ -182,7 +192,22 @@ class PlayerSlot extends React.Component {
                         </div>
                     </div>
                     <div className="player-table-section">
-                        <div className="vote-section" style={{transform: `rotateZ(${data.votesRotate[slot]}deg)`}}>
+                        <div className="vote-marks-section">
+                            <div className="vote-marks">
+                                {voteMarksDown.length ? (<div className="vote-marks-col">{voteMarksDown.map((it) => (
+                                    <i onClick={() => game.toggleWhiteBoardExpanded(it.whiteBoardIndex, slot)}
+                                       className={`material-icons vote-mark color-slot-${it.pres}`}>keyboard_arrow_down</i>))}</div>) : ""}
+                                {voteMarksUp.length ? (<div className="vote-marks-col">{voteMarksUp.map((it) => (
+                                    <i onClick={() => game.toggleWhiteBoardExpanded(it.whiteBoardIndex, slot)}
+                                       className={`material-icons vote-mark color-slot-${it.pres}`}>keyboard_arrow_up</i>))}</div>) : ""}
+                            </div>
+                        </div>
+                        <div className="vote-section"
+                             style={{
+                                 transform: `rotateZ(${data.votesTilt[slot].rotate}deg)`
+                                     + `translateX(${data.votesTilt[slot].x}px)`
+                                     + `translateY(${data.votesTilt[slot].y}px)`
+                             }}>
                             {(data.playersVotes && ~data.playersVoted.indexOf(slot))
                                 ? (<div className={`vote-card ${data.playersVotes[slot] ? "ja" : "nein"}`}/>)
                                 : (~data.playersVoted.indexOf(slot)
@@ -233,7 +258,11 @@ class NoteItem extends React.Component {
                     if (line && (line[1] === line[2] || line[1] === "??" || line[2] === "??"))
                         line.splice(1, 1);
                     return <div className="enact-line">
-                        <span className={`color-slot-${item.pres}`}>{slotNames[item.pres]}</span>{arrow}
+                        <span
+                            className={`color-slot-${item.pres} `
+                            + `${data.whiteBoardVoteHighlight != null && data.whiteBoardExpanded === index ? "pres-highlight" : ""}`}>
+                            {slotNames[item.pres]}
+                            </span>{arrow}
                         <span className={`color-slot-${item.can}`}>{slotNames[item.can]}</span>{colon}
                         {item.type === "enact"
                             ? line.map((cards, ind) => [ind ? arrow : "", cards.split("").map((card) => cardTypes[card])])
@@ -257,7 +286,8 @@ class NoteItem extends React.Component {
                     return votesList.length
                         ? <div className="votes-list">{title}{colon}{(votesList.length && downVotesList.length)
                             ? votesList.map((slot) => <span
-                                className={`color-slot-${slot}`}>{slotNames[slot]}{space}</span>)
+                                className={`color-slot-${slot} ${data.whiteBoardVoteHighlight === slot ? "pres-highlight-vote" : ""}`}>
+                                {slotNames[slot]}{space}</span>)
                             : "All"}</div>
                         : "";
                 };
@@ -286,13 +316,15 @@ class NoteItem extends React.Component {
                         className={`color-slot-${item.pres}`}>{slotNames[item.pres]}</span>{space}gives{space}pres{space}to{space}
                     <span className={`color-slot-${item.slot}`}>{slotNames[item.slot]}</span>
                 </span>;
-            else if (item.type === "veto")
+            else if (item.type === "veto" || item.type === "pre-enact")
                 note = <span><span className={`color-slot-${item.pres}`}>{slotNames[item.pres]}</span>{arrow}
-                    <span className={`color-slot-${item.can}`}>{slotNames[item.can]}</span>{colon}Veto!</span>;
+                    <span className={`color-slot-${item.can}`}>
+                        {slotNames[item.can]}</span>{colon}{item.type === "veto" ? "Veto!" : "Elected"}
+                    </span>;
             else if (item.type === "inspect-deck")
                 note = getInspectDeckLine(lastLine);
             if (data.whiteBoardExpanded === index)
-                if (~["enact", "skip", "veto"].indexOf(item.type))
+                if (~["enact", "skip", "veto", "pre-enact"].indexOf(item.type))
                     noteExpanded = <div className="note-expanded">
                         {getVotesLine(item.votes.ja, item.votes.nein, "Ja")}
                         {getVotesLine(item.votes.nein, item.votes.ja, "Nein")}
@@ -310,7 +342,7 @@ class NoteItem extends React.Component {
                 <div className={`note-item ${data.whiteBoardExpanded === index ? "expanded" : ""}`
                 + ` ${item.reclaimed ? "reclaimed" : ""}`}>
                     {noteExpanded}
-                    {~["enact", "skip"].indexOf(item.type)
+                    {~["enact", "skip", "veto", "pre-enact"].indexOf(item.type)
                     || ~["inspect", "inspect-deck"].indexOf(item.type)
                     && (item.reclaimed || item.pres === data.userSlot) ? (<i
                         className="material-icons note-controls"
@@ -394,7 +426,6 @@ class NoteButtons extends React.Component {
 
 class Game extends React.Component {
     componentDidMount() {
-        this.testMode = true;
         const initArgs = {};
         if (!localStorage.secretHitlerUserId || !localStorage.secretHitlerUserToken) {
             while (!localStorage.userName)
@@ -413,7 +444,7 @@ class Game extends React.Component {
         this.socket.on("state", (state) => {
             this.processEffects(this.state, state);
             if (this.state.phase === "select-can" && state.phase === "voting")
-                this.votesRotateUpdate();
+                this.votesTiltUpdate();
             this.setState(Object.assign(state, {
                 userId: this.userId,
                 userSlot: ~state.playerSlots.indexOf(this.userId)
@@ -422,8 +453,9 @@ class Game extends React.Component {
                 players: this.state.players || {},
                 cardSelected: this.state.cardSelected,
                 whiteBoardExpanded: this.state.whiteBoardExpanded,
+                whiteBoardVoteHighlight: this.state.whiteBoardVoteHighlight,
                 whiteBoardHidden: this.state.whiteBoardHidden,
-                votesRotate: this.state.votesRotate
+                votesTilt: this.state.votesTilt
             }));
         });
         this.socket.on("player-state", (players) => {
@@ -459,11 +491,19 @@ class Game extends React.Component {
         this.tapSound.volume = 0.3;
         this.tapSoundL = new Audio("/secret-hitler/tap_l.ogg");
         this.tapSoundR = new Audio("/secret-hitler/tap_r.ogg");
-        this.votesRotateUpdate();
+        this.votesTiltUpdate();
     }
 
-    votesRotateUpdate() {
-        this.state.votesRotate = Array(10).fill().map(() => Math.floor(Math.random() * 12) - 6);
+    votesTiltUpdate() {
+        this.state.votesTilt = Array(10).fill().map(() => this.getRandomVoteTilt());
+    }
+
+    getRandomVoteTilt() {
+        return {
+            rotate: Math.floor(Math.random() * 10) - 5,
+            x: Math.floor(Math.random() * 10) - 5,
+            y: Math.floor(Math.random() * 10) - 5
+        }
     }
 
     processEffects(prev, current) {
@@ -472,7 +512,7 @@ class Game extends React.Component {
             changedSlot = prev.playersVoted.filter(x => !current.playersVoted.includes(x))
                 .concat(current.playersVoted.filter(x => !prev.playersVoted.includes(x)))[0];
         if (changedSlot !== null)
-            this.state.votesRotate[changedSlot] = Math.floor(Math.random() * 12) - 6;
+            this.state.votesTilt[changedSlot] = this.getRandomVoteTilt();
         if (!this.isMuted() && prev.inited) {
             if (prev.playersShot.length > current.playersShot.length)
                 this.plateSetSound.play();
@@ -618,6 +658,7 @@ class Game extends React.Component {
     }
 
     handleClickClaim(index, claim) {
+        this.toggleWhiteBoardExpanded();
         this.socket.emit("claim", index, claim);
     }
 
@@ -625,15 +666,22 @@ class Game extends React.Component {
         this.socket.emit("test-command", command);
     }
 
-    toggleWhiteBoardExpanded(ind) {
+    toggleWhiteBoardExpanded(ind, highlightVote) {
         this.setState(Object.assign(this.state, {
-            whiteBoardExpanded: this.state.whiteBoardExpanded === ind ? null : ind
+            whiteBoardExpanded: (this.state.whiteBoardExpanded === ind && highlightVote == null)
+                ? null
+                : ind,
+            whiteBoardVoteHighlight: (this.state.whiteBoardExpanded === ind
+                && this.state.whiteBoardVoteHighlight === highlightVote)
+                ? null
+                : highlightVote
         }));
     }
 
     toggleWhiteBoardHidden() {
         this.setState(Object.assign(this.state, {
             whiteBoardExpanded: null,
+            whiteBoardVoteHighlight: null,
             whiteBoardHidden: !this.state.whiteBoardHidden
         }));
     }
@@ -730,17 +778,17 @@ class Game extends React.Component {
                     slotsCount = data.playerSlots.filter((slot) => slot !== null).length,
                     notEnoughPlayers = data.phase === "idle" && slotsCount < 5,
                     playerVote = data.players[data.userSlot] && data.players[data.userSlot].vote,
-                    playerCount = data.activeSlots.length,
+                    playerCount = (data.libWin == null && data.phase === "idle") ? slotsCount : data.activeSlots.length,
                     gameType = playerCount < 7 ? "small" : (playerCount < 9 ? "medium" : "large"),
                     actionsOrderF = {
                         small: ["", "", "inspect-deck", "shooting", "shooting-veto", ""],
                         medium: ["", "inspect", "election", "shooting", "shooting-veto", ""],
-                        large: ["inspect", "inspect", "election", "shooting", "shooting-veto", ""],
+                        large: ["inspect", "inspect", "election", "shooting", "shooting-veto", ""]
                     }[gameType],
                     actionsOrderL = {
                         small: ["", "", "", "", ""],
                         medium: ["", "", "", "", ""],
-                        large: ["", "", "", "", ""],
+                        large: ["", "", "", "", ""]
                     }[gameType],
                     actions = ["", "inspect-deck", "inspect", "election", "shooting", "shooting-veto"],
                     welcomeMessage = <div className="welcome-message">
@@ -890,7 +938,7 @@ class Game extends React.Component {
                                               className="material-icons start-game settings-button">lock_outline</i>)
                                         : (<i onClick={() => this.handleToggleTeamLockClick()}
                                               className="material-icons start-game settings-button">lock_open</i>)) : ""}
-                                    {isHost ? (data.phase === "idle"
+                                    {isHost ? ((data.phase === "idle" && data.libWin == null)
                                         ? (<i onClick={() => this.handleClickTogglePause()}
                                               title={notEnoughPlayers ? "Not enough players" : ""}
                                               className={`material-icons start-game settings-button ${notEnoughPlayers
@@ -904,10 +952,10 @@ class Game extends React.Component {
                                               className="toggle-theme material-icons settings-button">volume_up</i>)
                                         : (<i onClick={() => this.handleToggleMuteSounds()}
                                               className="toggle-theme material-icons settings-button">volume_off</i>)}
-                                    {this.testMode ? (
+                                    {data.testMode ? (
                                         <i className="settings-hover-button material-icons settings-button"
                                            onClick={() => this.testCommand("vote-pass")}>check</i>) : ""}
-                                    {this.testMode ? (
+                                    {data.testMode ? (
                                         <i className="settings-hover-button material-icons settings-button"
                                            onClick={() => this.testCommand("vote-fail")}>close</i>) : ""}
                                 </div>
