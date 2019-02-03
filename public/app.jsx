@@ -139,7 +139,7 @@ class PlayerSlot extends React.Component {
                 plate = ["prev-pres", false, true];
             return (
                 <div
-                    className={"player-slot"
+                    className={`player-slot ${player !== null ? "" : "no-player"}`
                     + (data.currentPres === slot ? " current-pres" : "")
                     + (data.currentCan === slot ? " current-can" : "")
                     + (data.prevPres === slot ? " prev-press" : "")
@@ -978,4 +978,4 @@ class Game extends React.Component {
     }
 }
 
-ReactDOM.render(<Game/>, document.getElementById('root'));
+ReactDOM.render(<Game/>, document.getElementById("root"));

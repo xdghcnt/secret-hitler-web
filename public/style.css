@@ -114,6 +114,12 @@ body {
 .player-host-controls {
     display: none;
     vertical-align: text-bottom;
+    position: absolute;
+    bottom: -11px;
+}
+
+.spectators .player-host-controls {
+    position: static;
 }
 
 .player-host-controls > * {
