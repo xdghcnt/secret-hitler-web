@@ -549,12 +549,12 @@ class Game extends React.Component {
 
     handleRemovePlayer(id, evt) {
         evt.stopPropagation();
-        this.socket.emit("remove-player", id);
+        popup.confirm({content: `Removing ${this.state.playerNames[id]}?`}, (evt) => evt.proceed && this.socket.emit("remove-player", id));
     }
 
     handleGiveHost(id, evt) {
         evt.stopPropagation();
-        this.socket.emit("give-host", id);
+        popup.confirm({content: `Give host ${this.state.playerNames[id]}?`}, (evt) => evt.proceed && this.socket.emit("give-host", id));
     }
 
     handleGiveBlackSlot(id, evt) {
@@ -581,9 +581,12 @@ class Game extends React.Component {
     }
 
     handleClickChangeName() {
-        const name = prompt("New name");
-        this.socket.emit("change-name", name);
-        localStorage.userName = name;
+        popup.prompt({content: "New name"}, (evt) => {
+            if (evt.proceed && evt.input_value.trim()) {
+                this.socket.emit("change-name", evt.input_value);
+                localStorage.userName = evt.input_value;
+            }
+        });
     }
 
     handleClickSetAvatar() {
