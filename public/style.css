@@ -386,6 +386,7 @@ body {
     box-sizing: border-box;
     background: url(table-bg.jpg);
     background-size: contain;
+    position: relative;
 }
 
 .game-track-section {
@@ -792,10 +793,14 @@ body {
 
 .color-lib {
     color: #0497d2;
+    stroke: #0497d2;
+    fill: #0497d2;
 }
 
 .color-fasc {
     color: #d60704;
+    stroke: #d60704;
+    fill: #d60704;
 }
 
 .color-unknown {
@@ -972,4 +977,32 @@ body {
     padding-left: 4px;
     margin-right: 4px;
     background: #ffffff24;
+}
+
+.arrows-pane {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+
+.arrow {
+    stroke-width: 3px;
+    fill: transparent;
+    opacity: 0.7;
+}
+
+.host-button.inactive {
+    cursor: default;
+}
+
+.player.offline .player-name-text {
+    text-decoration: line-through;
+}
+
+.player-slot.no-player .player.offline .player-name-text {
+    text-decoration: none;
+}
+
+.main-slots.top .material-icons.vote-mark {
+    transform: rotateZ(180deg);
 }

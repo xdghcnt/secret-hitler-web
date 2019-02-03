@@ -492,6 +492,57 @@ class Game extends React.Component {
         this.tapSoundL = new Audio("/secret-hitler/tap_l.ogg");
         this.tapSoundR = new Audio("/secret-hitler/tap_r.ogg");
         this.votesTiltUpdate();
+        this.calcSlotCoords();
+    }
+
+    calcSlotCoords() {
+        this.tableW = 691;
+        this.tableH = 397;
+        this.slotMap = [
+            [0, 1], [1, 0], [2, 0], [3, 0], [4, 1],
+            [4, 2], [3, 3], [2, 3], [1, 3], [0, 2]
+        ];
+        this.slotCoords = this.slotMap
+            .map((it) => [Math.round((it[0] / 4) * this.tableW), Math.round((it[1] / 3) * this.tableH)]);
+    }
+
+    getSlotCurves(slotA, slotB) {
+        const
+            a = this.slotMap[slotA],
+            b = this.slotMap[slotB],
+            aCoords = this.slotCoords[slotA],
+            bCoords = this.slotCoords[slotB];
+        if (a[0] !== b[0] && ~[a[0], b[0]].indexOf(0) && ~[a[0], b[0]].indexOf(4))
+            return {a: [Math.round(this.tableW / 2), aCoords[1]], b: [Math.round(this.tableW / 2), bCoords[1]]};
+        else if (a[1] !== b[1] && ~[a[1], b[1]].indexOf(0) && ~[a[1], b[1]].indexOf(3))
+            return {a: [aCoords[0], Math.round(this.tableH / 2)], b: [bCoords[0], Math.round(this.tableH / 2)]};
+        else if (a[1] === 0 && b[1] === 0)
+            return {
+                a: [aCoords[0], Math.round(this.tableH / 3) - 20],
+                b: [bCoords[0], Math.round(this.tableH / 3) - 20]
+            };
+        else if (a[1] === 3 && b[1] === 3)
+            return {
+                a: [aCoords[0], this.tableH - Math.round(this.tableH / 3) + 20],
+                b: [bCoords[0], this.tableH - Math.round(this.tableH / 3) + 20]
+            };
+        else if (a[0] === 0 && b[0] === 0)
+            return {
+                a: [Math.round(this.tableW / 4) - 30, aCoords[1]],
+                b: [Math.round(this.tableW / 4) - 30, bCoords[1]]
+            };
+        else if (a[0] === 4 && b[0] === 4)
+            return {
+                a: [this.tableW - Math.round(this.tableW / 4) + 30, aCoords[0]],
+                b: [this.tableW - Math.round(this.tableW / 4) + 30, bCoords[0]]
+            };
+        else {
+            const point = [
+                ~[0, 4].indexOf(a[0]) ? bCoords[0] : aCoords[0],
+                ~[0, 3].indexOf(b[1]) ? aCoords[1] : bCoords[1]
+            ];
+            return {a: point, b: point};
+        }
     }
 
     votesTiltUpdate() {
@@ -800,7 +851,29 @@ class Game extends React.Component {
                                 ? `${isHost ? "You" : "Host"} can start ${slotsCount} player game`
                                 : "At least 5 players needed")
                             : <span>{data.activeSlots.length} player game started</span>}
-                    </div>;
+                    </div>,
+                    arrowList = [];
+                data.whiteBoard.forEach((it) => {
+                    const lastClaim = it.claims && it.claims[it.claims.length - 1];
+                    if (it.type === "enact" && !~lastClaim.indexOf("??") && lastClaim[1] !== lastClaim[2])
+                        arrowList.push({
+                            type: "fasc",
+                            aSlot: it.pres,
+                            bSlot: it.can,
+                        });
+                    else if (it.type === "inspect" && lastClaim !== "?")
+                        arrowList.push({
+                            type: {l: "lib", f: "fasc"}[lastClaim],
+                            aSlot: it.pres,
+                            bSlot: it.slot,
+                            directed: true
+                        });
+                });
+                arrowList.forEach((it) => {
+                    it.a = this.slotCoords[it.aSlot];
+                    it.b = this.slotCoords[it.bSlot];
+                    it.curves = this.getSlotCurves(it.aSlot, it.bSlot);
+                });
                 let status = this.getStatus();
                 return (
                     <div className={`game`}>
@@ -815,6 +888,29 @@ class Game extends React.Component {
                                         {[0, 9].map((it) => (<PlayerSlot data={data} slot={it} game={this}/>))}
                                     </div>
                                     <div className="game-table-top">
+                                        <svg className="arrows-pane"
+                                             xmlns="http://www.w3.org/2000/svg">
+                                            <defs>
+                                                <marker id="markerArrow-lib" orient="auto-start-reverse"
+                                                        markerWidth="10" markerHeight="10" refX="7" refY="4"
+                                                        viewBox="0 0 20 20">
+                                                    <path d="M0,0 L0,8 L8,4 z" className="color-lib"/>
+                                                </marker>
+                                                <marker id="markerArrow-fasc" orient="auto-start-reverse"
+                                                        markerWidth="10" markerHeight="10" refX="7" refY="4"
+                                                        viewBox="0 0 20 20">
+                                                    <path d="M0,0 L0,8 L8,4 z" className="color-fasc"/>
+                                                </marker>
+                                            </defs>
+                                            {arrowList.map((it) => (
+                                                <path
+                                                    d={`M ${it.a[0]} ${it.a[1]} C ${it.curves.a[0]} ${it.curves.a[1]}, `
+                                                    + `${it.curves.b[0]} ${it.curves.b[1]}, ${it.b[0]} ${it.b[1]}`}
+                                                    markerStart={it.directed ? "" : `url(#markerArrow-${it.type})`}
+                                                    markerEnd={`url(#markerArrow-${it.type})`}
+                                                    className={`arrow color-${it.type}`}/>
+                                            ))}
+                                        </svg>
                                         <div className="game-track-section">
                                             <div className={`deck ${data.deckSize > 0 ? "" : "hidden"}`}>
                                                 <div className="deck-count">{data.deckSize}</div>
