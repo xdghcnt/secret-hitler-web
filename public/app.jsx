@@ -694,7 +694,7 @@ class Game extends React.Component {
     }
 
     openRules() {
-        window.open("https://secrethitler.com/assets/Secret_Hitler_Rules.pdf", "_blank");
+        window.open("/secret-hitler/rules.html", "_blank");
     }
 
     isMuted() {
