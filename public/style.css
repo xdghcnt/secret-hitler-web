@@ -973,7 +973,7 @@ body {
 }
 
 .pres-highlight {
-    text-shadow: white 0 0 3px;
+    text-decoration: underline;
 }
 
 .pres-highlight-vote {
