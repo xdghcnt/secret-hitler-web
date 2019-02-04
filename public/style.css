@@ -1006,3 +1006,7 @@ body {
 .main-slots.top .material-icons.vote-mark {
     transform: rotateZ(180deg);
 }
+
+.popup_modals .modal_buttons .btn.btn_pmry {
+    background-color: #31894f !important;
+}
