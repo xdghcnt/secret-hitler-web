@@ -374,6 +374,7 @@ body {
     display: flex;
     flex-flow: column;
     align-items: center;
+    user-select: none;
 }
 
 .game-table-top {
@@ -419,6 +420,7 @@ body {
     height: 90px;
     display: flex;
     flex-direction: column;
+    pointer-events: none;
 }
 
 .main-slots.bottom .player-table-section {
@@ -467,6 +469,7 @@ body {
 .plate.button {
     opacity: 0.3;
     cursor: pointer;
+    pointer-events: auto;
 }
 
 .plate.button:hover {
@@ -948,6 +951,7 @@ body {
     line-height: 7px;
     width: 13px;
     display: block;
+    pointer-events: auto;
 }
 
 .main-slots.bottom .vote-marks {
@@ -986,9 +990,14 @@ body {
 }
 
 .arrow {
-    stroke-width: 3px;
-    fill: transparent;
+    stroke-width: 3.5px;
+    fill: none;
     opacity: 0.7;
+    pointer-events: stroke;
+}
+
+.arrow:hover {
+    opacity: 0.9;
 }
 
 .host-button.inactive {

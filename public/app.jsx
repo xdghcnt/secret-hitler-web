@@ -725,6 +725,7 @@ class Game extends React.Component {
 
     toggleWhiteBoardExpanded(ind, highlightVote) {
         this.setState(Object.assign(this.state, {
+            whiteBoardHidden: false,
             whiteBoardExpanded: (this.state.whiteBoardExpanded === ind && (highlightVote == null || this.state.whiteBoardVoteHighlight === null))
                 ? null
                 : ind,
@@ -856,20 +857,22 @@ class Game extends React.Component {
                             : <span>{data.activeSlots.length} player game started</span>}
                     </div>,
                     arrowList = [];
-                data.whiteBoard.forEach((it) => {
+                data.whiteBoard.forEach((it, index) => {
                     const lastClaim = it.claims && it.claims[it.claims.length - 1];
                     if (it.type === "enact" && !~lastClaim.indexOf("??") && lastClaim[1] !== lastClaim[2])
                         arrowList.push({
                             type: "fasc",
                             aSlot: it.pres,
                             bSlot: it.can,
+                            index
                         });
                     else if (it.type === "inspect" && lastClaim !== "?")
                         arrowList.push({
                             type: {l: "lib", f: "fasc"}[lastClaim],
                             aSlot: it.pres,
                             bSlot: it.slot,
-                            directed: true
+                            directed: true,
+                            index
                         });
                 });
                 arrowList.forEach((it) => {
@@ -896,12 +899,12 @@ class Game extends React.Component {
                                             <defs>
                                                 <marker id="markerArrow-lib" orient="auto-start-reverse"
                                                         markerWidth="10" markerHeight="10" refX="7" refY="4"
-                                                        viewBox="0 0 20 20">
+                                                        viewBox="0 0 27 20">
                                                     <path d="M0,0 L0,8 L8,4 z" className="color-lib"/>
                                                 </marker>
                                                 <marker id="markerArrow-fasc" orient="auto-start-reverse"
                                                         markerWidth="10" markerHeight="10" refX="7" refY="4"
-                                                        viewBox="0 0 20 20">
+                                                        viewBox="0 0 27 20">
                                                     <path d="M0,0 L0,8 L8,4 z" className="color-fasc"/>
                                                 </marker>
                                             </defs>
@@ -911,6 +914,7 @@ class Game extends React.Component {
                                                     + `${it.curves.b[0]} ${it.curves.b[1]}, ${it.b[0]} ${it.b[1]}`}
                                                     markerStart={it.directed ? "" : `url(#markerArrow-${it.type})`}
                                                     markerEnd={`url(#markerArrow-${it.type})`}
+                                                    onClick={() => this.toggleWhiteBoardExpanded(it.index)}
                                                     className={`arrow color-${it.type}`}/>
                                             ))}
                                         </svg>
