@@ -725,7 +725,7 @@ class Game extends React.Component {
 
     toggleWhiteBoardExpanded(ind, highlightVote) {
         this.setState(Object.assign(this.state, {
-            whiteBoardExpanded: (this.state.whiteBoardExpanded === ind && highlightVote == null)
+            whiteBoardExpanded: (this.state.whiteBoardExpanded === ind && (highlightVote == null || this.state.whiteBoardVoteHighlight === null))
                 ? null
                 : ind,
             whiteBoardVoteHighlight: (this.state.whiteBoardExpanded === ind
