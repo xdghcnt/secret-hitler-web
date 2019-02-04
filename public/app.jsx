@@ -482,6 +482,9 @@ class Game extends React.Component {
         this.socket.on("ping", (id) => {
             this.socket.emit("pong", id);
         });
+        this.socket.on("message", text => {
+            popup.alert({content: text});
+        });
         this.plateSetSound = new Audio("/secret-hitler/plate-set.wav");
         this.plateSetSound.volume = 0.3;
         this.shotSound = new Audio("/secret-hitler/shot.wav");
