@@ -536,8 +536,8 @@ class Game extends React.Component {
             };
         else if (a[0] === 4 && b[0] === 4)
             return {
-                a: [this.tableW - Math.round(this.tableW / 4) + 30, aCoords[0]],
-                b: [this.tableW - Math.round(this.tableW / 4) + 30, bCoords[0]]
+                a: [this.tableW - Math.round(this.tableW / 4) + 30, aCoords[1]],
+                b: [this.tableW - Math.round(this.tableW / 4) + 30, bCoords[1]]
             };
         else {
             const point = [
