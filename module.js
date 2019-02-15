@@ -659,13 +659,12 @@ function init(wsServer, path) {
         setSnapshot(snapshot) {
             Object.assign(this.room, snapshot.room);
             Object.assign(this.state, snapshot.state);
+            this.room.spectators = new JSONSet();
             this.room.onlinePlayers = new JSONSet(this.room.onlinePlayers);
-            this.room.spectators = new JSONSet(this.room.spectators);
             this.room.playersVoted = new JSONSet(this.room.playersVoted);
             this.room.playersShot = new JSONSet(this.room.playersShot);
             this.room.playersInspected = new JSONSet(this.room.playersInspected);
             this.room.playersNotHitler = new JSONSet(this.room.playersNotHitler);
-            this.room.spectators = new JSONSet(this.room.spectators);
             this.room.blackSlotPlayers = new JSONSet(this.room.blackSlotPlayers);
             this.room.activeSlots = new JSONSet(this.room.activeSlots);
             this.room.onlinePlayers.clear();
