@@ -18,13 +18,9 @@ class Player extends React.Component {
             game = this.props.game,
             hasPlayer = id !== null;
         return (
-            <div className={
-                "player"
-                + (!~data.onlinePlayers.indexOf(id) ? " offline" : "")
-                + (id === data.userId ? " self" : "")
-            }
+            <div className={cs("player", {offline: !~data.onlinePlayers.indexOf(id), self: id === data.userId})}
                  data-playerId={id}>
-                <div className={`player-name-text bg-color-${this.props.slot}`}>
+                <div className={cs("player-name-text", `bg-color-${this.props.slot}`)}>
                     {hasPlayer
                         ? data.playerNames[id]
                         : (data.teamsLocked
@@ -139,17 +135,18 @@ class PlayerSlot extends React.Component {
                 plate = ["prev-pres", false, true];
             return (
                 <div
-                    className={`player-slot ${player !== null ? "" : "no-player"}`
-                    + (data.currentPres === slot ? " current-pres" : "")
-                    + (data.currentCan === slot ? " current-can" : "")
-                    + (data.prevPres === slot ? " prev-press" : "")
-                    + (data.prevCan === slot ? " prev-can" : "")
-                    + (~data.playersShot.indexOf(slot) ? " shot" : "")
-                    + ((!~data.activeSlots.indexOf(slot) && data.teamsLocked && !data.playerSlots[slot]) ? " unoccupied" : "")
-                    + ((!~data.activeSlots.indexOf(slot) && data.playerSlots[slot]) ? " inactive" : "")
-                    + ` player-slot-${slot}`}>
+                    className={cs("player-slot", `player-slot-${slot}`, {
+                        "no-player": player == null,
+                        "current-pres": data.currentPres === slot,
+                        "current-can": data.currentCan === slot,
+                        "prev-pres": data.prevPres === slot,
+                        "prev-can": data.prevCan,
+                        "shot": ~data.playersShot.indexOf(slot),
+                        "unoccupied": !~data.activeSlots.indexOf(slot) && data.teamsLocked && !data.playerSlots[slot],
+                        "inactive": !~data.activeSlots.indexOf(slot) && data.playerSlots[slot]
+                    })}>
                     <div className="player-section">
-                        <div className={`avatar ${player !== null ? "" : "no-player"}`}
+                        <div className={cs("avatar", {"no-player": player == null})}
                              style={{
                                  "background-image": player !== null ? `url(/secret-hitler/${data.playerAvatars[player]
                                      ? `avatars/${player}/${data.playerAvatars[player]}.png`
@@ -196,10 +193,10 @@ class PlayerSlot extends React.Component {
                             <div className="vote-marks">
                                 {voteMarksDown.length ? (<div className="vote-marks-col">{voteMarksDown.map((it) => (
                                     <i onClick={() => game.toggleWhiteBoardExpanded(it.whiteBoardIndex, slot)}
-                                       className={`material-icons vote-mark color-slot-${it.pres}`}>keyboard_arrow_down</i>))}</div>) : ""}
+                                       className={cs("material-icons", "vote-mark", `color-slot-${it.pres}`)}>keyboard_arrow_down</i>))}</div>) : ""}
                                 {voteMarksUp.length ? (<div className="vote-marks-col">{voteMarksUp.map((it) => (
                                     <i onClick={() => game.toggleWhiteBoardExpanded(it.whiteBoardIndex, slot)}
-                                       className={`material-icons vote-mark color-slot-${it.pres}`}>keyboard_arrow_up</i>))}</div>) : ""}
+                                       className={cs("material-icons", "vote-mark", `color-slot-${it.pres}`)}>keyboard_arrow_up</i>))}</div>) : ""}
                             </div>
                         </div>
                         <div className="vote-section"
@@ -209,12 +206,15 @@ class PlayerSlot extends React.Component {
                                      + `translateY(${data.votesTilt[slot].y}px)`
                              }}>
                             {(data.playersVotes && ~data.playersVoted.indexOf(slot))
-                                ? (<div className={`vote-card ${data.playersVotes[slot] ? "ja" : "nein"}`}/>)
+                                ? (<div className={cs("vote-card", {
+                                    ja: data.playersVotes[slot],
+                                    nein: !data.playersVotes[slot]
+                                })}/>)
                                 : (~data.playersVoted.indexOf(slot)
                                     ? (<div className="vote-card"/>) : "")}
                         </div>
                         <div className="plate-section">
-                            {plate ? (<div className={`plate ${plate[1] ? "button" : ""} ${plate[2] ? "prev" : ""}`}
+                            {plate ? (<div className={cs("plate", {button: plate[1], prev: plate[2]})}
                                            onClick={() => plate && plate[1] && game.handleSetPlate(slot)}
                                            style={{"background-position-y": plates.indexOf(plate[0]) * -41}}/>) : ""}
                         </div>
@@ -259,8 +259,7 @@ class NoteItem extends React.Component {
                         line.splice(1, 1);
                     return <div className="enact-line">
                         <span
-                            className={`color-slot-${item.pres} `
-                            + `${data.whiteBoardVoteHighlight != null && data.whiteBoardExpanded === index ? "pres-highlight" : ""}`}>
+                            className={cs(`color-slot-${item.pres}`, {"pres-highlight": data.whiteBoardVoteHighlight != null && data.whiteBoardExpanded === index})}>
                             {slotNames[item.pres]}
                             </span>{arrow}
                         <span className={`color-slot-${item.can}`}>{slotNames[item.can]}</span>{colon}
@@ -286,7 +285,7 @@ class NoteItem extends React.Component {
                     return votesList.length
                         ? <div className="votes-list">{title}{colon}{(votesList.length && downVotesList.length)
                             ? votesList.map((slot) => <span
-                                className={`color-slot-${slot} ${data.whiteBoardVoteHighlight === slot ? "pres-highlight-vote" : ""}`}>
+                                className={cs(`color-slot-${slot}`, {"pres-highlight-vote": data.whiteBoardVoteHighlight === slot})}>
                                 {slotNames[slot]}{space}</span>)
                             : "All"}</div>
                         : "";
@@ -339,8 +338,11 @@ class NoteItem extends React.Component {
                         {prevLines.map(getInspectDeckLine)}
                     </div>;
             return (
-                <div className={`note-item ${data.whiteBoardExpanded === index ? "expanded" : ""}`
-                + ` ${item.reclaimed ? "reclaimed" : ""}`}>
+                <div className={
+                    cs("note-item", {
+                        expanded: data.whiteBoardExpanded === index,
+                        reclaimed: item.reclaimed
+                    })}>
                     {noteExpanded}
                     {~["enact", "skip", "veto", "pre-enact"].indexOf(item.type)
                     || ~["inspect", "inspect-deck"].indexOf(item.type)
@@ -882,9 +884,12 @@ class Game extends React.Component {
                 });
                 let status = this.getStatus();
                 return (
-                    <div className={`game`}>
-                        <div className={`game-board ${(this.state.inited ? "active" : "")} `
-                        + `${(this.state.libWin !== null ? (this.state.libWin ? "lib-win" : "fasc-win") : "")}`}>
+                    <div className="game">
+                        <div className={cs("game-board", {
+                            active: this.state.inited,
+                            "lib-win": this.state.libWin,
+                            "fasc-win": this.state.libWin === false
+                        })}>
                             <div className="game-table">
                                 <div className="main-slots top">
                                     {[1, 2, 3].map((it) => (<PlayerSlot data={data} slot={it} game={this}/>))}
@@ -915,11 +920,11 @@ class Game extends React.Component {
                                                     markerStart={it.directed ? "" : `url(#markerArrow-${it.type})`}
                                                     markerEnd={`url(#markerArrow-${it.type})`}
                                                     onClick={() => this.toggleWhiteBoardExpanded(it.index)}
-                                                    className={`arrow color-${it.type}`}/>
+                                                    className={cs("arrow", `color-${it.type}`)}/>
                                             ))}
                                         </svg>
                                         <div className="game-track-section">
-                                            <div className={`deck ${data.deckSize > 0 ? "" : "hidden"}`}>
+                                            <div className={cs("deck", {hidden: data.deckSize === 0})}>
                                                 <div className="deck-count">{data.deckSize}</div>
                                                 <div className="policy-card"/>
                                             </div>
@@ -927,7 +932,7 @@ class Game extends React.Component {
                                                 <div className="fasc-track">
                                                     {[0, 1, 2, 3, 4, 5].map((it) => (
                                                         <div
-                                                            className={`policy-slot slot-${it}`}
+                                                            className={cs("policy-slot", `slot-${it}`)}
                                                             style={{"background-position-x": actions.indexOf(actionsOrderF[it]) * -38.5}}>
                                                             {(data.fascTrack >= it + 1) ? (
                                                                 <div className="policy-card f"/>) : ""}
@@ -936,17 +941,17 @@ class Game extends React.Component {
                                                 <div className="lib-track">
                                                     {[0, 1, 2, 3, 4].map((it) => (
                                                         <div
-                                                            className={`policy-slot slot-${it}`}
+                                                            className={cs("policy-slot", `slot-${it}`)}
                                                             style={{"background-position-x": actions.indexOf(actionsOrderL[it]) * -38.5}}>
                                                             {(data.libTrack >= it + 1) ? (
                                                                 <div className="policy-card l"/>) : ""}
                                                         </div>))}
                                                 </div>
                                                 <div className="skip-track">
-                                                    <div className={`skip-token skip-${data.skipTrack}`}/>
+                                                    <div className={cs("skip-token", `skip-${data.skipTrack}`)}/>
                                                 </div>
                                             </div>
-                                            <div className={`deck discard ${data.discardSize > 0 ? "" : "hidden"}`}>
+                                            <div className={cs("deck", "discard", {hidden: data.discardSize === 0})}>
                                                 <div className="deck-count">{data.discardSize}</div>
                                                 <div className="policy-card"/>
                                             </div>
@@ -964,17 +969,26 @@ class Game extends React.Component {
                                 {userData && !~data.playersShot.indexOf(data.userSlot) && data.phase === "voting" ? (
                                     <div className="vote-cards">
                                         <div onClick={() => this.handleClickVote(false)}
-                                             className={"vote-card nein " + (playerVote != null ? (!playerVote ? "selected" : "unselected") : "")}/>
+                                             className={cs("vote-card", "nein", {
+                                                 selected: playerVote === false,
+                                                 unselected: playerVote
+                                             })}/>
                                         <div
                                             onClick={() => this.handleClickVote(true)}
-                                            className={"vote-card ja " + (playerVote != null ? (playerVote ? "selected" : "unselected") : "")}/>
+                                            className={cs("vote-card", "ja", {
+                                                selected: playerVote,
+                                                unselected: playerVote === false
+                                            })}/>
                                     </div>) : (userData && userData.cards ? "" : "")}
                                 {userData && userData.cards ? (<div className="policy-cards">
                                     {userData.cards.map((card, index) => (
                                         <div
                                             onClick={() => data.phase !== "pres-action" && this.handleClickCard(index)}
-                                            className={`policy-card ${card} `
-                                            + `${data.cardSelected !== null ? (data.cardSelected === index ? "selected" : "unselected") : ""}`}/>))}
+                                            className={cs("policy-card", `${card}`, {
+                                                selected: data.cardSelected === index,
+                                                unselected: data.cardSelected != null
+                                            })}>{data.cardSelected === index ? (
+                                            <i className="material-icons policy-card-drop">close</i>) : ""}</div>))}
                                 </div>) : ""}
                                 {userData && userData.cards && userData.cards.length
                                     ? (<i onClick={() => this.handleClickOK()}
@@ -998,8 +1012,8 @@ class Game extends React.Component {
                                         No...
                                     </i>) : ""}
                             </div>
-                            <div className={`notes ${this.state.whiteBoardHidden ? "hidden" : ""}`}>
-                                <div className={`note-list ${data.whiteBoardExpanded != null ? "expanded" : ""}`}>
+                            <div className={cs("notes", {hidden: this.state.whiteBoardHidden})}>
+                                <div className={cs("note-list", {expanded: data.whiteBoardExpanded != null})}>
                                     {welcomeMessage}
                                     {data.whiteBoard.map((it, ind) =>
                                         (<NoteItem item={it} data={data} game={this} index={ind}/>))}
@@ -1027,9 +1041,7 @@ class Game extends React.Component {
                                 <div className="banner right"/>
                             </div>
                             <div className={
-                                "spectators-section"
-                                + ((data.spectators.length > 0 || !data.teamsLocked) ? " active" : "")
-                            }>
+                                cs("spectators-section", {active: data.spectators.length > 0 || !data.teamsLocked})}>
                                 <Spectators data={this.state}
                                             game={this}/>
                             </div>

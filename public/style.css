@@ -1019,3 +1019,11 @@ body {
 .popup_modals .modal_buttons .btn.btn_pmry {
     background-color: #31894f !important;
 }
+
+.policy-card-drop {
+    display: flex;
+    justify-content: center;
+    font-size: 119px;
+    color: #b50b0b;
+    user-select: none;
+}
