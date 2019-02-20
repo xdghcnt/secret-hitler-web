@@ -58,7 +58,10 @@ function init(wsServer, path) {
                     vetoRequest: null,
                     specialElection: false,
                     fCount: 11,
-                    lCount: 6
+                    lCount: 6,
+                    paused: false,
+                    time: null,
+                    timeTotal: null
                 }),
                 state = {
                     players: {},
@@ -81,6 +84,10 @@ function init(wsServer, path) {
                     libWin: null,
                     shufflePlayers: true,
                     rebalanced: false,
+                    timed: false,
+                    timeChanged: false,
+                    actionTime: 180,
+                    smallActionTime: 30,
                     testMode
                 },
                 resetRoom = () => Object.assign(room, getResetParams()),
@@ -95,6 +102,7 @@ function init(wsServer, path) {
             this.room = room;
             this.state = state;
             this.lastInteraction = new Date();
+            let timerInterval;
             const
                 send = (target, event, data) => userRegistry.send(target, event, data),
                 update = () => {
@@ -122,6 +130,41 @@ function init(wsServer, path) {
                             res.push(slot);
                     });
                     return shuffleArray(res)[0];
+                },
+                startTimer = () => {
+                    if (room.timed) {
+                        if (~["pres-draw", "can-draw"].indexOf(room.phase) || ~["inspect", "inspect-deck"].indexOf(room.presAction))
+                            room.time = room.timeTotal = room.smallActionTime * 1000;
+                        else
+                            room.time = room.timeTotal = room.actionTime * 1000;
+                        let time = new Date();
+                        clearInterval(timerInterval);
+                        timerInterval = setInterval(() => {
+                            if (!room.paused) {
+                                room.time -= new Date() - time;
+                                time = new Date();
+                                if (room.time <= 0) {
+                                    clearInterval(timerInterval);
+                                    let failed;
+                                    if (~["pres-draw", "pres-action", "select-can"].indexOf(room.phase))
+                                        failed = room.currentPres;
+                                    else if (room.phase === "can-draw")
+                                        failed = room.currentCan;
+                                    else if (room.phase === "voting")
+                                        failed = shuffleArray([...room.activeSlots].filter((slot) => !room.playersVoted.has(slot)
+                                            && !room.playersShot.has(slot)))[0];
+                                    if (failed != null) {
+                                        room.whiteBoard.push({
+                                            type: "timer-fail",
+                                            slotFailed: failed
+                                        });
+                                        room.libWin = state.players[failed].role !== "l";
+                                    }
+                                    endGame();
+                                }
+                            } else time = new Date();
+                        }, 100);
+                    }
                 },
                 startGame = () => {
                     const playersCount = room.playerSlots.filter((user) => user !== null).length;
@@ -204,6 +247,7 @@ function init(wsServer, path) {
                 },
                 startSelectCan = () => {
                     room.phase = "select-can";
+                    startTimer();
                     update();
                 },
                 startVoting = () => {
@@ -213,18 +257,21 @@ function init(wsServer, path) {
                     Object.keys(players).forEach((slot) => {
                         players[slot].vote = null;
                     });
+                    startTimer();
                     updateState();
                     update();
                 },
                 startPresDraw = () => {
                     room.phase = "pres-draw";
                     players[room.currentPres].cards = state.deck.splice(0, 3);
+                    startTimer();
                     update();
                     sendStateSlot(room.currentPres);
                 },
                 startCanDraw = () => {
                     room.phase = "can-draw";
                     players[room.currentCan].cards = players[room.currentPres].cards.splice(0);
+                    startTimer();
                     update();
                     sendStateSlot(room.currentCan);
                     sendStateSlot(room.currentPres);
@@ -245,8 +292,10 @@ function init(wsServer, path) {
                     }
                     if (!room.presAction)
                         nextPres();
-                    else
+                    else {
+                        startTimer();
                         update();
+                    }
                 },
                 nextPres = () => {
                     room.prevCan = room.currentCan;
@@ -302,6 +351,7 @@ function init(wsServer, path) {
                 isEnoughPlayers = () => room.playerSlots.filter((user) => user !== null).length > 4,
                 endGame = () => {
                     room.phase = "idle";
+                    room.paused = true;
                     if (!isEnoughPlayers())
                         room.teamsLocked = false;
                     update();
@@ -586,6 +636,38 @@ function init(wsServer, path) {
                 "toggle-lock": (user) => {
                     if (user === room.hostId)
                         room.teamsLocked = !room.teamsLocked;
+                    update();
+                },
+                "toggle-paused": (user) => {
+                    if (user === room.hostId) {
+                        room.paused = !room.paused;
+                        if (!room.paused && room.timeChanged) {
+                            room.timeChanged = false;
+                            startTimer();
+                        }
+                    }
+                    update();
+                },
+                "toggle-timed": (user) => {
+                    if (user === room.hostId) {
+                        room.timed = !room.timed;
+                        if (!room.timed) {
+                            room.paused = true;
+                            clearInterval(timerInterval);
+                        } else {
+                            if (room.phase !== "idle") {
+                                room.paused = false;
+                                startTimer();
+                            } else room.paused = true;
+                        }
+                    }
+                    update();
+                },
+                "set-time": (user, type, value) => {
+                    if (user === room.hostId && ~["action", "smallAction"].indexOf(type) && !isNaN(value) && value >= 1) {
+                        room[`${type}Time`] = value;
+                        room.timeChanged = true;
+                    }
                     update();
                 },
                 "change-name": (user, value) => {
