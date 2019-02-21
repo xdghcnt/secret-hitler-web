@@ -939,8 +939,18 @@ body {
 .vote-marks {
     position: absolute;
     bottom: 4px;
-    left: 126px;
+    left: 125px;
     display: flex;
+    align-items: flex-end;
+}
+
+.main-slots.top .vote-marks {
+    left: 135px;
+    align-items: normal;
+}
+
+.main-slots.bottom .vote-marks {
+    left: 124px;
 }
 
 .main-slots.top .vote-marks {
