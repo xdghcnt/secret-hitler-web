@@ -442,7 +442,8 @@ function init(wsServer, path) {
                                 canClaimed: false,
                                 votes: {
                                     ja: [...room.activeSlots].filter((slot) => players[slot].vote),
-                                    nein: [...room.activeSlots].filter((slot) => !players[slot].vote)
+                                    nein: [...room.activeSlots].filter((slot) => !room.playersShot.has(slot)
+                                        && !players[slot].vote)
                                 }
                             });
                             if (votePassed) {
