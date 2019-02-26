@@ -1076,3 +1076,7 @@ body {
     opacity: 1;
     transition: none;
 }
+
+.black-slot-mark {
+    cursor: default !important;
+}

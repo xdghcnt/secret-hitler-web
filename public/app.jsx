@@ -16,7 +16,14 @@ class Player extends React.Component {
             data = this.props.data,
             id = this.props.id,
             game = this.props.game,
-            hasPlayer = id !== null;
+            hasPlayer = id !== null,
+            blackSlotButton = <i
+                className={cs("material-icons", "host-button", {"black-slot-mark": data.hostId !== data.userId})}
+                title={data.hostId === data.userId ? (!~data.blackSlotPlayers.indexOf(id)
+                    ? "Give black slot" : "Remove black slot") : "Black slot"}
+                onClick={(evt) => game.handleGiveBlackSlot(id, evt)}>
+                {!~data.blackSlotPlayers.indexOf(id) ? "visibility_off" : "visibility"}
+            </i>;
         return (
             <div className={cs("player", {offline: !~data.onlinePlayers.indexOf(id), self: id === data.userId})}
                  data-playerId={id}>
@@ -27,6 +34,10 @@ class Player extends React.Component {
                             ? (<div className="slot-empty">Empty</div>)
                             : (<div className="join-slot-button"
                                     onClick={() => game.handlePlayerJoin(this.props.slot)}>Seat</div>))}
+                    {(~data.blackSlotPlayers.indexOf(id)) ? (
+                        <span className="black-slot-button">&nbsp;{blackSlotButton}</span>
+                    ) : ""}
+
                 </div>
                 {hasPlayer ? (<div className="player-host-controls">
                     {(data.hostId === data.userId && data.userId !== id) ? (
@@ -36,12 +47,8 @@ class Player extends React.Component {
                             vpn_key
                         </i>
                     ) : ""}
-                    {(data.hostId === data.userId && this.props.isSpectator) ? (
-                        <i className="material-icons host-button"
-                           title={!~data.blackSlotPlayers.indexOf(id) ? "Give black slot" : "Remove black slot"}
-                           onClick={(evt) => game.handleGiveBlackSlot(id, evt)}>
-                            {!~data.blackSlotPlayers.indexOf(id) ? "visibility_off" : "visibility"}
-                        </i>
+                    {(this.props.isSpectator && data.hostId === data.userId && !~data.blackSlotPlayers.indexOf(id)) ? (
+                        blackSlotButton
                     ) : ""}
                     {(data.hostId === data.userId && data.userId !== id) ? (
                         <i className="material-icons host-button"
