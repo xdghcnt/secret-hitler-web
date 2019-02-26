@@ -150,9 +150,13 @@ function init(wsServer, path) {
                                         failed = room.currentPres;
                                     else if (room.phase === "can-draw")
                                         failed = room.currentCan;
-                                    else if (room.phase === "voting")
+                                    else if (room.phase === "voting") {
+                                        [...room.playersVoted].forEach((slot) => {
+                                            room.playersVotes[slot] = players[slot].vote;
+                                        });
                                         failed = shuffleArray([...room.activeSlots].filter((slot) => !room.playersVoted.has(slot)
                                             && !room.playersShot.has(slot)))[0];
+                                    }
                                     if (failed != null) {
                                         room.whiteBoard.push({
                                             type: "timer-fail",
