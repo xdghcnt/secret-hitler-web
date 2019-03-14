@@ -6,15 +6,6 @@
     font-weight: bold;
 }
 
-.player.offline {
-}
-
-.player.offline .player-name-text {
-}
-
-.spectators .player.offline .player-name-text {
-}
-
 .host-controls {
     position: fixed;
     right: 0;
@@ -62,7 +53,7 @@
     margin-bottom: 9px;
 }
 
-.host-controls:hover .host-controls-menu {
+.host-controls:hover .host-controls-menu, .host-controls:focus .host-controls-menu {
     display: block;
 }
 
@@ -82,7 +73,7 @@
     display: none;
 }
 
-.host-controls:hover .side-buttons {
+.host-controls:hover .side-buttons, .host-controls:focus .side-buttons {
     display: inline-block;
 }
 
@@ -126,7 +117,7 @@ body {
     margin-left: 3px;
 }
 
-.player:hover .player-host-controls {
+.player:hover .player-host-controls, .player:focus .player-host-controls {
     display: flex;
     flex: 0;
 }
@@ -167,7 +158,7 @@ body {
     width: auto;
 }
 
-.spectators .player:hover .player-host-controls {
+.spectators .player:hover .player-host-controls, .spectators .player:focus .player-host-controls {
     display: inline-block;
 }
 
@@ -183,7 +174,7 @@ body {
     justify-content: center;
 }
 
-.avatar:hover .set-avatar-button {
+.avatar:hover .set-avatar-button, .avatar:focus .set-avatar-button {
     display: block;
 }
 
@@ -355,7 +346,7 @@ body {
     user-select: none;
 }
 
-.help-panel:hover {
+.help-panel:hover, .help-panel:focus {
     background: rgba(255, 252, 245, 0.86);
 }
 
@@ -366,7 +357,7 @@ body {
     vertical-align: super;
 }
 
-.help-panel:hover .status-message {
+.help-panel:hover .status-message, .help-panel:focus .status-message {
     display: inline-block;
 }
 
@@ -789,9 +780,6 @@ body {
 .note-list {
     padding: 8px;
     padding-bottom: 0;
-}
-
-.notes:hover {
 }
 
 .color-lib {

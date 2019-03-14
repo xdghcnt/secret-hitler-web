@@ -26,6 +26,7 @@ class Player extends React.Component {
             </i>;
         return (
             <div className={cs("player", {offline: !~data.onlinePlayers.indexOf(id), self: id === data.userId})}
+                 onTouchStart={(e) => e.target.focus()}
                  data-playerId={id}>
                 <div className={cs("player-name-text", `bg-color-${this.props.slot}`)}>
                     {hasPlayer
@@ -154,6 +155,7 @@ class PlayerSlot extends React.Component {
                     })}>
                     <div className="player-section">
                         <div className={cs("avatar", {"no-player": player == null})}
+                             onTouchStart={(e) => e.target.focus()}
                              style={{
                                  "background-image": player !== null ? `url(/secret-hitler/${data.playerAvatars[player]
                                      ? `avatars/${player}/${data.playerAvatars[player]}.png`
@@ -1092,7 +1094,7 @@ class Game extends React.Component {
                                     <NoteButtons data={data} game={this}/>
                                 </div>
                             </div>
-                            <div className="help-panel">
+                            <div className="help-panel" onTouchStart={(e) => e.target.focus()}>
                                 <i onClick={() => this.showHelp()}
                                    className="material-icons">help</i>
                                 <div className="status-message">{status}</div>
@@ -1106,7 +1108,7 @@ class Game extends React.Component {
                                 <Spectators data={this.state}
                                             game={this}/>
                             </div>
-                            <div className="host-controls">
+                            <div className="host-controls" onTouchStart={(e) => e.target.focus()}>
                                 {data.timed ? (<div className="host-controls-menu">
                                     <div className="little-controls">
                                         <div className="game-settings little-controls">
