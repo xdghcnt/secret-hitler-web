@@ -151,6 +151,7 @@ function init(wsServer, path) {
                                     else if (room.phase === "can-draw")
                                         failed = room.currentCan;
                                     else if (room.phase === "voting") {
+                                        room.playersVotes = {};
                                         [...room.playersVoted].forEach((slot) => {
                                             room.playersVotes[slot] = players[slot].vote;
                                         });
