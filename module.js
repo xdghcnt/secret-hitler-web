@@ -350,7 +350,7 @@ function init(wsServer, path) {
                 processReshuffle = () => {
                     if (state.deck.length < 3) {
                         room.whiteBoard.push({type: "reshuffle"});
-                        state.deck.push(...state.discardDeck.splice(0));
+                        state.deck.push(...shuffleArray(state.discardDeck.splice(0)));
                     }
                 },
                 isEnoughPlayers = () => room.playerSlots.filter((user) => user !== null).length > 4,
@@ -585,7 +585,7 @@ function init(wsServer, path) {
                             if (action.claims.length > 1)
                                 action.reclaimed = true;
                             action.claims.push(claim);
-                        }
+                         }
                         else if (action.type === "enact") {
                             const
                                 newClaim = lastClaim.slice(),
