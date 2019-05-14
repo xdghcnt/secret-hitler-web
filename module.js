@@ -350,7 +350,8 @@ function init(wsServer, path) {
                 processReshuffle = () => {
                     if (state.deck.length < 3) {
                         room.whiteBoard.push({type: "reshuffle"});
-                        state.deck.push(...shuffleArray(state.discardDeck.splice(0)));
+                        state.deck.push(...state.discardDeck.splice(0));
+                        shuffleArray(state.deck);
                     }
                 },
                 isEnoughPlayers = () => room.playerSlots.filter((user) => user !== null).length > 4,
