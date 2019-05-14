@@ -1064,6 +1064,14 @@ class Game extends React.Component {
                                           className="accept-button veto">
                                         Veto?
                                     </i>) : ""}
+                                {data.userSlot === data.currentCan && data.vetoRequest === false
+                                    ? (<i className="accept-button veto">
+                                        Veto denied
+                                    </i>) : ""}
+                                {data.userSlot === data.currentCan && data.vetoRequest === true
+                                    ? (<i className="accept-button veto">
+                                        ...
+                                    </i>) : ""}
                                 {data.vetoRequest && data.userSlot === data.currentPres
                                     ? (<i onClick={() => this.handleClickVetoAccept(true)}
                                           className="accept-button veto">
