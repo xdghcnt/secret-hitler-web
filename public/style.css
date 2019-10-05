@@ -247,7 +247,7 @@ body {
 
 .player-role {
     width: 46px;
-    height: 64.2px;
+    height: 64px;
     position: absolute;
     top: -9px;
     left: -16px;
@@ -1067,4 +1067,35 @@ body {
 
 .black-slot-mark {
     cursor: default !important;
+}
+
+.ptn body {
+    background: url(ptn/bg.png) black;
+    background-position: bottom;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+.ptn .not-hitler-card {
+    background: url(ptn/not-hitler.png);
+}
+
+.ptn .plate {
+    background: url(ptn/plates.jpg);
+    background-size: cover;
+}
+
+.ptn .player-role {
+    background: url(ptn/roles.jpg);
+    background-size: cover;
+}
+
+.ptn .watch {
+    background: url(ptn/watch.png);
+    background-size: contain;
+}
+
+.ptn .watch-hand {
+    background: url(ptn/watch-hand.png) no-repeat center center;
+    background-size: contain;
 }

@@ -456,6 +456,8 @@ class Game extends React.Component {
         initArgs.userId = this.userId = localStorage.secretHitlerUserId;
         initArgs.token = this.userToken = localStorage.secretHitlerUserToken;
         initArgs.userName = localStorage.userName;
+        if (initArgs.roomId.includes("p" + "u" + "t" + "i" + "n"))
+            document.documentElement.classList.add("ptn");
         this.socket = window.socket.of("secret-hitler");
         this.socket.on("state", (state) => {
             this.processEffects(this.state, state);
