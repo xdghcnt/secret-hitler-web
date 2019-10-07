@@ -163,6 +163,7 @@ class PlayerSlot extends React.Component {
                              }}>
                             {role !== "unknown"
                                 ? (<div className="player-role"
+                                        onMouseDown={(evt) => game.playerRoleHold(evt.target)}
                                         style={{"background-position-x": roles.indexOf(role) * -46}}/>) : ""}
                             {~data.playersNotHitler.indexOf(slot)
                                 ? (<div className="not-hitler-card"/>) : ""}
@@ -786,6 +787,18 @@ class Game extends React.Component {
         this.debouncedEmit("set-time", type, value || 1);
     }
 
+    playerRoleHold(node) {
+        this.zoomTimer = setTimeout(() => {
+            node.classList.add("zoomed");
+        }, 300);
+    }
+
+    zoomedRelease() {
+        clearTimeout(this.zoomTimer);
+        [...document.getElementsByClassName("zoomed")].forEach((node) =>
+            node.classList.remove("zoomed"));
+    }
+
     openRules() {
         window.open("/secret-hitler/rules.html", "_blank");
     }
@@ -945,7 +958,8 @@ class Game extends React.Component {
                     }, 1000);
                 }
                 return (
-                    <div className="game">
+                    <div className="game"
+                         onMouseUp={() => this.zoomedRelease()}>
                         <div className={cs("game-board", {
                             active: this.state.inited,
                             "lib-win": this.state.libWin,

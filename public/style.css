@@ -1078,15 +1078,16 @@ body {
 
 .ptn .not-hitler-card {
     background: url(ptn/not-hitler.png);
+    background-size: contain;
 }
 
 .ptn .plate {
-    background: url(ptn/plates.jpg);
+    background: url(ptn/plates.png);
     background-size: cover;
 }
 
 .ptn .player-role {
-    background: url(ptn/roles.jpg);
+    background: url(ptn/roles.png);
     background-size: cover;
 }
 
@@ -1098,4 +1099,62 @@ body {
 .ptn .watch-hand {
     background: url(ptn/watch-hand.png) no-repeat center center;
     background-size: contain;
+}
+
+.ptn .vote-card {
+    background: url(ptn/voting-cards.png) no-repeat center center;
+    background-size: cover;
+    background-position-x: 0;
+}
+
+.ptn .vote-card.nein {
+    background-position-x: -77px;
+}
+
+.ptn .vote-card.ja {
+    background-position-x: -38px;
+}
+
+.ptn .hand-section .vote-card.nein {
+    background-position-x: -230px;
+}
+
+.ptn .hand-section .vote-card.ja {
+    background-position-x: -115px;
+}
+
+.ptn .policy-slot {
+    background: url(ptn/pres-actions.png);
+    background-size: cover;
+}
+
+.ptn .game-track-section {
+    background: url(ptn/policy-track.png);
+    background-size: cover;
+}
+
+.ptn .policy-card {
+    background: url(ptn/policy-cards.png);
+    background-size: cover;
+}
+
+.ptn .policy-card.l {
+    background-position-x: -109px;
+}
+
+.ptn .policy-card.f {
+    background-position-x: -219px;
+}
+
+.ptn .game-track .policy-card.f {
+    background-position-x: -77px;
+}
+
+.ptn .game-track .policy-card.l {
+    background-position-x: -38px;
+}
+
+.ptn .player-role.zoomed {
+    zoom: 2.9;
+    z-index: 3;
 }
