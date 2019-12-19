@@ -645,7 +645,7 @@ class Game extends React.Component {
     }
 
     handleClickStart() {
-        if (this.state.phase === "idle" || this.state.libWin !== null || confirm("Game will be aborted. Are you sure?"))
+        if (this.state.phase === "idle" || this.state.partyWin !== null || confirm("Game will be aborted. Are you sure?"))
             this.socket.emit("start-game");
     }
 
@@ -814,7 +814,9 @@ class Game extends React.Component {
         let status;
         if (data.inited) {
             const
-                prevResult = data.libWin === null ? "" : (!data.libWin ? "Fascists win! " : "Liberals win! ");
+                prevResult = data.partyWin === null
+                    ? ""
+                    : `${{f: "Fascists", l: "Liberals", c: "Communists"}[data.partyWin]} win! `;
             if (notEnoughPlayers)
                 status = `${prevResult}Not enough players`;
             else if (data.phase === "idle")
@@ -892,7 +894,7 @@ class Game extends React.Component {
                     slotsCount = data.playerSlots.filter((slot) => slot !== null).length,
                     notEnoughPlayers = data.phase === "idle" && slotsCount < 5,
                     playerVote = data.players[data.userSlot] && data.players[data.userSlot].vote,
-                    playerCount = (data.libWin == null && data.phase === "idle") ? slotsCount : data.activeSlots.length,
+                    playerCount = (data.partyWin == null && data.phase === "idle") ? slotsCount : data.activeSlots.length,
                     gameType = playerCount < 7 ? "small" : (playerCount < 9 ? "medium" : "large"),
                     actionsOrderF = {
                         small: ["", "", "inspect-deck", "shooting", "shooting-veto", ""],
@@ -904,9 +906,10 @@ class Game extends React.Component {
                         medium: ["", "", "", "", ""],
                         large: ["", "", "", "", ""]
                     }[gameType],
+                    actionsOrderC = ["inspect", "election", "shooting-veto"],
                     actions = ["", "inspect-deck", "inspect", "election", "shooting", "shooting-veto"],
                     welcomeMessage = <div className="welcome-message">
-                        {data.phase === "idle" && data.libWin === null
+                        {data.phase === "idle" && data.partyWin === null
                             ? (slotsCount >= 5
                                 ? `${isHost ? "You" : "Host"} can start ${slotsCount} player game`
                                 : "At least 5 players needed")
@@ -962,8 +965,9 @@ class Game extends React.Component {
                          onMouseUp={() => this.zoomedRelease()}>
                         <div className={cs("game-board", {
                             active: this.state.inited,
-                            "lib-win": this.state.libWin,
-                            "fasc-win": this.state.libWin === false
+                            "lib-win": this.state.partyWin === "l",
+                            "fasc-win": this.state.partyWin === "f",
+                            "com-win": this.state.partyWin === "c"
                         })}>
                             {data.timed ? (<div className="watch">
                                 <div className="watch-hand" id="watch-hand"/>
@@ -1104,9 +1108,10 @@ class Game extends React.Component {
                                     {welcomeMessage}
                                     {data.whiteBoard.map((it, ind) =>
                                         (<NoteItem item={it} data={data} game={this} index={ind}/>))}
-                                    {data.libWin !== null ? (
-                                        <div><span className={`color-${data.libWin ? "lib" : "fasc"}`}>
-                                            {data.libWin ? "Liberals" : "Fascists"}</span> wins!
+                                    {data.partyWin !== null ? (
+                                        <div><span
+                                            className={`color-${{l: "lib", f: "fasc", c: "com"}[data.partyWin]}`}>
+                                            ${{f: "Fascists", l: "Liberals", c: "Communists"}[data.partyWin]}</span> wins!
                                         </div>) : ""}
                                 </div>
                                 <div className="notes-footer">
@@ -1173,7 +1178,7 @@ class Game extends React.Component {
                                               className="material-icons start-game settings-button">lock_outline</i>)
                                         : (<i onClick={() => this.handleToggleTeamLockClick()}
                                               className="material-icons start-game settings-button">lock_open</i>)) : ""}
-                                    {isHost ? ((data.phase === "idle" && data.libWin == null)
+                                    {isHost ? ((data.phase === "idle" && data.partyWin == null)
                                         ? (<i onClick={() => this.handleClickStart()}
                                               title={notEnoughPlayers ? "Not enough players" : ""}
                                               className={cs("material-icons", "start-game", "settings-button", {inactive: notEnoughPlayers})}>
