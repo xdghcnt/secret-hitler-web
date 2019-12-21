@@ -681,6 +681,12 @@ function init(wsServer, path) {
                     if (user === room.hostId)
                         startGame();
                 },
+                "tri-team-set": (user, state) => {
+                    if (user === room.hostId) {
+                        room.triTeam = !!state;
+                        startGame();
+                    }
+                },
                 "update-avatar": (user, id) => {
                     room.playerAvatars[user] = id;
                     update()

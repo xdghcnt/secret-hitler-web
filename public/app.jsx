@@ -99,7 +99,7 @@ class PlayerSlot extends React.Component {
                 player = data.playerSlots[slot],
                 slotData = data.players[slot],
                 isOnlyFive = (data.activeSlots.length - data.playersShot.length) <= 5,
-                roles = ["unknown", "check", "l", "f", "h", "f1", "f2", "f3", "l1", "l2", "l3", "l4", "l5", "l6"],
+                roles = ["unknown", "check", "l", "f", "h", "f1", "f2", "f3", "l1", "l2", "l3", "l4", "l5", "l6", "c1", "c2"],
                 plates = ["pres", "can", "prev-pres", "prev-can"],
                 actions = ["", "inspect-deck", "inspect", "election", "shooting", "shooting-veto"],
                 voteMarksUp = [],
@@ -159,7 +159,7 @@ class PlayerSlot extends React.Component {
                              style={{
                                  "background-image": player !== null ? `url(/secret-hitler/${data.playerAvatars[player]
                                      ? `avatars/${player}/${data.playerAvatars[player]}.png`
-                                     : "default-user.jpg"})` : ""
+                                     : "media/default-user.jpg"})` : ""
                              }}>
                             {role !== "unknown"
                                 ? (<div className="player-role"
@@ -254,8 +254,10 @@ class NoteItem extends React.Component {
                 cardTypes = {
                     F: <span className="color-fasc">F</span>,
                     L: <span className="color-lib">L</span>,
+                    C: <span className="color-com">C</span>,
                     f: <span className="color-fasc">Fascist</span>,
                     l: <span className="color-lib">Liberal</span>,
+                    c: <span className="color-com">Communist</span>,
                     "?": <span className="color-unknown">?</span>
                 },
                 arrow = <span className="log-arrow">&gt;</span>,
@@ -387,8 +389,10 @@ class NoteButtons extends React.Component {
                 cardTypes = {
                     F: <span className="color-fasc">F</span>,
                     L: <span className="color-lib">L</span>,
+                    C: <span className="color-com">C</span>,
                     f: <span className="color-fasc">Fascist</span>,
                     l: <span className="color-lib">Liberal</span>,
+                    c: <span className="color-com">Communist</span>,
                     ">": <span className="log-arrow">&gt;</span>
                 };
             let actionIndex, action, isEdit, buttons = [];
@@ -412,20 +416,33 @@ class NoteButtons extends React.Component {
                 });
             if (action && !~data.playersShot.indexOf(data.userSlot))
                 if (action.type === "inspect")
-                    buttons = ["l", "f"];
+                    buttons = !data.triTeam ? ["l", "f"] : ["l", "f", "c"];
                 else if (action.type === "inspect-deck")
                     buttons = ["FFF", "FFL", "FLF", "LFF", "FLL", "LFL", "LLF", "LLL"];
                 else if (action.type === "enact")
                     if (action.pres === data.userSlot)
-                        buttons = {
-                            F: ["FFF", "FFL", "FLL>FL"].concat(isEdit ? ["FFL>FF"] : []),
-                            L: ["FFL", "FLL>FL", "FLL>LL", "LLL"]
-                        }[action.claims[0][3]];
+                        buttons = (!data.triTeam
+                            ? {
+                                F: ["FFF", "FFL", "FLL>FL"].concat(isEdit ? ["FFL>FF"] : []),
+                                L: ["FFL", "FLL>FL", "FLL>LL", "LLL"]
+                            }
+                            : {
+                                F: ["FFF", "FFL", "FFC>FC", "FFC>FF", "FLL>FL", "FCC>FC", "FCL>FL"].concat(isEdit ? ["FFL>FF", "FCL>FC"] : []),
+                                L: ["FFL", "CCL", "FLL>FL", "FLL>LL", "CLL>CL", "CLL>LL", "FCL>FL", "FCL>CL", "LLL"],
+                                C: ["CCC", "CCL", "FFC", "FCC>FC", "FCC>CC", "FCL>CL", "CLL>CL"].concat(isEdit ? ["CCL>CC", "FCL>FC"] : [])
+                            })[action.claims[0][3]];
                     else if (action.can === data.userSlot)
-                        buttons = {
-                            F: ["FF", "FL"],
-                            L: ["FL", "LL"]
-                        }[action.claims[0][3]];
+                        buttons = (!data.triTeam
+                                ? {
+                                    F: ["FF", "FL"],
+                                    L: ["FL", "LL"]
+                                }
+                                : {
+                                    F: ["FF", "FL", "FC"],
+                                    L: ["FL", "CL", "LL"],
+                                    C: ["FC", "CL", "CC"],
+                                }
+                        )[action.claims[0][3]];
             return <div className="note-buttons">
                 <div
                     className="note-buttons-title">{buttons.length ? (isEdit ? "Edit:" : "Claim:") : ""}</div>
@@ -504,16 +521,15 @@ class Game extends React.Component {
         this.socket.on("message", text => {
             popup.alert({content: text});
         });
-        this.plateSetSound = new Audio("/secret-hitler/plate-set.wav");
+        this.plateSetSound = new Audio("/secret-hitler/media/plate-set.wav");
         this.plateSetSound.volume = 0.3;
-        this.shotSound = new Audio("/secret-hitler/shot.wav");
-        this.dealSound = new Audio("/secret-hitler/deal.mp3");
+        this.dealSound = new Audio("/secret-hitler/media/deal.mp3");
         this.dealSound.volume = 0.3;
-        this.tapSound = new Audio("/secret-hitler/tap.mp3");
+        this.tapSound = new Audio("/secret-hitler/media/tap.mp3");
         this.tapSound.volume = 0.3;
-        this.tapSoundL = new Audio("/secret-hitler/tap_l.ogg");
-        this.tapSoundR = new Audio("/secret-hitler/tap_r.ogg");
-        this.timerSound = new Audio("/secret-hitler/tick.mp3");
+        this.tapSoundL = new Audio("/secret-hitler/media/tap_l.ogg");
+        this.tapSoundR = new Audio("/secret-hitler/media/tap_r.ogg");
+        this.timerSound = new Audio("/secret-hitler/media/tick.mp3");
         this.timerSound.volume = 0.4;
         this.votesTiltUpdate();
         this.calcSlotCoords();
@@ -679,6 +695,14 @@ class Game extends React.Component {
         document.getElementById("avatar-input").click();
     }
 
+    handleSetTriTeam(state) {
+        if (this.state.triTeam !== state
+            && (this.state.phase === "idle"
+                || this.state.partyWin !== null
+                || confirm("Game will be aborted. Are you sure?")))
+            this.socket.emit("tri-team-set", state);
+    }
+
     handleSetAvatar(event) {
         const input = event.target;
         if (input.files && input.files[0]) {
@@ -810,7 +834,8 @@ class Game extends React.Component {
     getStatus() {
         const
             data = this.state,
-            notEnoughPlayers = data.phase === "idle" && data.playerSlots.filter((slot) => slot !== null).length < 5;
+            notEnoughPlayers = data.phase === "idle" && data.playerSlots
+                .filter((slot) => slot !== null).length < (!data.triTeam ? 5 : 9);
         let status;
         if (data.inited) {
             const
@@ -927,7 +952,7 @@ class Game extends React.Component {
                         });
                     else if (it.type === "inspect" && lastClaim !== "?")
                         arrowList.push({
-                            type: {l: "lib", f: "fasc"}[lastClaim],
+                            type: {l: "lib", f: "fasc", c: "fasc"}[lastClaim],
                             aSlot: it.pres,
                             bSlot: it.slot,
                             directed: true,
@@ -1012,6 +1037,15 @@ class Game extends React.Component {
                                                 <div className="policy-card"/>
                                             </div>
                                             <div className="game-track">
+                                                {data.triTeam ? (<div className="com-track">
+                                                    {[0, 1, 2, 3].map((it) => (
+                                                        <div
+                                                            className={cs("policy-slot", `slot-${it}`)}
+                                                            style={{"background-position-x": actions.indexOf(actionsOrderF[it]) * -38.5}}>
+                                                            {(data.comTrack >= it + 1) ? (
+                                                                <div className="policy-card c"/>) : ""}
+                                                        </div>))}
+                                                </div>) : ""}
                                                 <div className="fasc-track">
                                                     {[0, 1, 2, 3, 4, 5].map((it) => (
                                                         <div
@@ -1111,7 +1145,11 @@ class Game extends React.Component {
                                     {data.partyWin !== null ? (
                                         <div><span
                                             className={`color-${{l: "lib", f: "fasc", c: "com"}[data.partyWin]}`}>
-                                            ${{f: "Fascists", l: "Liberals", c: "Communists"}[data.partyWin]}</span> wins!
+                                            ${{
+                                            f: "Fascists",
+                                            l: "Liberals",
+                                            c: "Communists"
+                                        }[data.partyWin]}</span> wins!
                                         </div>) : ""}
                                 </div>
                                 <div className="notes-footer">
@@ -1162,7 +1200,24 @@ class Game extends React.Component {
                                         </div>
                                     </div>
                                 </div>) : ""}
-
+                                <div className="little-controls">
+                                    <span
+                                        className={cs({
+                                            "settings-button": isHost,
+                                            "level-selected": !this.state.triTeam
+                                        })}
+                                        onClick={() => this.handleSetTriTeam(false)}>
+                                            Normal
+                                            </span>
+                                    <span
+                                        className={cs({
+                                            "settings-button": isHost,
+                                            "level-selected": this.state.triTeam
+                                        })}
+                                        onClick={() => this.handleSetTriTeam(true)}>
+                                            3 teams
+                                            </span>
+                                </div>
                                 <div className="side-buttons">
                                     <i onClick={() => window.location = parentDir}
                                        className="material-icons exit settings-button">exit_to_app</i>
