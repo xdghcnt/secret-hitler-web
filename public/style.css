@@ -22,7 +22,6 @@
     text-align: left;
     border-bottom: 1px solid;
     padding-bottom: 6px;
-    height: 25px;
 }
 
 .little-controls input {
@@ -382,11 +381,16 @@ body {
 }
 
 .game-track-section {
-    width: 438px;
-    height: 201px;
-    background: url(media/policy-track.png);
+    width: 452px;
+    height: 193px;
+    background: url(media/policy-track.png) bottom;
     background-size: cover;
     display: flex;
+}
+
+.tri-team .game-track-section {
+    background: url(media/policy-track-tri.png) bottom;
+    background-size: cover;
 }
 
 .middle-row {
@@ -564,6 +568,10 @@ body {
     background-position-x: -219px;
 }
 
+.policy-card.c {
+    background-position-x: -329px;
+}
+
 .player-role.check-button {
     cursor: pointer;
     opacity: 0.6;
@@ -571,24 +579,30 @@ body {
 
 .fasc-track {
     display: flex;
-    padding: 41px 25px;
+    padding: 37px 31px;
 }
 
 .lib-track {
     display: flex;
-    padding: 10px 47px;
+    padding: 13px 53px;
 }
 
 .com-track {
     display: flex;
-    padding: 10px 47px;
+    padding: 13px 79px;
+    padding-top: 38px;
 }
 
 .policy-slot {
     width: 38px;
     height: 38px;
-    margin: 0 4.3px;
+    margin: 0 3.8px;
     background: url(media/pres-actions.png);
+    background-size: cover;
+}
+
+.com-track .policy-slot {
+    background: url(media/pres-actions-com.png);
     background-size: cover;
 }
 
@@ -607,7 +621,7 @@ body {
 }
 
 .game-track .policy-card.c {
-    background-position-x: -105px;
+    background-position-x: -116px;
 }
 
 .game-track .policy-card.f {
@@ -623,16 +637,22 @@ body {
     flex-direction: column;
     align-self: flex-end;
     padding-bottom: 15px;
-    padding-left: 1px;
+    padding-left: 4px;
+}
+
+.deck.discard {
+    padding-left: 2px;
 }
 
 .deck-count {
     color: white;
     text-align: center;
-    margin-bottom: -9px;
+    margin-bottom: -8px;
     font-size: 20px;
     font-weight: bold;
-    background: #00000057;
+    background: #0000004d;
+    width: 42px;
+    align-self: center;
 }
 
 .skip-token {
@@ -643,7 +663,7 @@ body {
 }
 
 .skip-track {
-    padding: 3px 110.7px;
+    padding: 1.2px 117.7px;
 }
 
 .skip-token.skip-1 {
@@ -664,7 +684,7 @@ body {
     z-index: -1;
 }
 
-.lib-win .win-banners, .fasc-win .win-banners {
+.lib-win .win-banners, .fasc-win .win-banners, .com-win .win-banners {
     display: block;
 }
 
@@ -681,7 +701,7 @@ body {
 }
 
 .com-win .banner {
-    background-position-x: -180px;
+    background-position-x: -181px;
 }
 
 .banner.left {
@@ -805,6 +825,12 @@ body {
     color: #d60704;
     stroke: #d60704;
     fill: #d60704;
+}
+
+.color-com {
+    color: #f4a954;
+    stroke: #f4a954;
+    fill: #f4a954;
 }
 
 .color-unknown {
@@ -1082,6 +1108,30 @@ body {
     cursor: default !important;
 }
 
+.little-controls.start-game-buttons {
+    padding-bottom: 0;
+    text-align: center;
+}
+
+.settings-button.level-selected {
+    background: #cacaca;
+}
+
+.start-game-buttons div {
+    display: inline-block;
+    padding: 17px;
+}
+
+.tri-team .game-track-section {
+    height: 283px;
+}
+
+.tri-team .game-table-top {
+    height: 494px;
+    background: url(media/table-bg-tri.jpg);
+    background-size: contain;
+}
+
 .ptn body {
     background: url(media/ptn/bg.png) black;
     background-position: bottom;
@@ -1167,7 +1217,7 @@ body {
     background-position-x: -38px;
 }
 
-.ptn .player-role.zoomed {
+.player-role.zoomed {
     zoom: 2.9;
     z-index: 3;
 }

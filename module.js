@@ -98,7 +98,7 @@ function init(wsServer, path) {
             resetRoom();
             let playerRoles = {};
             if (testMode)
-                [1, 2, 3, 4, 5, 6, 7].forEach((ind) => {
+                [1, 2, 3, 4, 5, 6, 7, 8, 9].forEach((ind) => {
                     room.playerSlots[ind] = `kek${ind}`;
                     room.playerNames[`kek${ind}`] = `kek${ind}`;
                 });
@@ -121,19 +121,12 @@ function init(wsServer, path) {
                         if (!room.triTeam)
                             send(user, "player-state", Object.assign({}, playerRoles, {[slot]: players[slot]}));
                         else
-                            send(user,
-                                "player-state",
-                                Object.assign({},
-                                    Object.keys(playerRoles).filter((slot) => ["f", "h"].includes(playerRoles[slot])),
-                                    {[slot]: players[slot]}
-                                )
+                            send(user, "player-state",
+                                Object.assign({}, getFilteredPlayers(["f", "h"]), {[slot]: players[slot]})
                             );
                     else if (players[slot] && (players[slot].role === "c"))
-                        send(user,
-                            "player-state",
-                            Object.assign({},
-                                Object.keys(playerRoles).filter((slot) => playerRoles[slot] === "c"),
-                                {[slot]: players[slot]})
+                        send(user, "player-state",
+                            Object.assign({}, getFilteredPlayers(["c"]), {[slot]: players[slot]})
                         );
                     else if (players[slot])
                         send(user, "player-state", {[slot]: players[slot]});
@@ -142,6 +135,14 @@ function init(wsServer, path) {
                 },
                 sendStateSlot = (slot) => sendState(room.playerSlots[slot]),
                 updateState = () => [...room.onlinePlayers].forEach(sendState),
+                getFilteredPlayers = (roles) => {
+                    return Object.keys(playerRoles)
+                        .filter((slot) => roles.includes(playerRoles[slot].role))
+                        .reduce((res, slot) => {
+                            res[slot] = playerRoles[slot];
+                            return res;
+                        }, {});
+                },
                 getRandomPlayer = (exclude, allowEmptySlot) => {
                     const res = [];
                     room.playerSlots.forEach((user, slot) => {
@@ -216,7 +217,7 @@ function init(wsServer, path) {
                             activeRoles = [],
                             addRole = (role) => {
                                 let player = getRandomPlayer(activeRoles);
-                                players[player] = role;
+                                players[player].role = role;
                                 activeRoles.push(player);
                             };
                         let player = getRandomPlayer(activeRoles);
@@ -620,9 +621,7 @@ function init(wsServer, path) {
                     const action = room.whiteBoard[index];
                     if (action
                         && (action.pres === slot || action.can === slot)
-                        && ((action.type === "enact" && ~(action.pres === slot
-                                ? /[FLC]{3}>?[FLC]{0,2}/
-                                : /[FLC]{2}/).match(claim))
+                        && (action.type === "enact"
                             || (action.type === "inspect" && ["f", "l", "c"].includes(claim))
                             || (action.type === "inspect-deck"
                                 && /[FLC]{3}/.match(claim))
@@ -684,6 +683,7 @@ function init(wsServer, path) {
                 "tri-team-set": (user, state) => {
                     if (user === room.hostId) {
                         room.triTeam = !!state;
+                        update();
                         startGame();
                     }
                 },

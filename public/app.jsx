@@ -99,7 +99,7 @@ class PlayerSlot extends React.Component {
                 player = data.playerSlots[slot],
                 slotData = data.players[slot],
                 isOnlyFive = (data.activeSlots.length - data.playersShot.length) <= 5,
-                roles = ["unknown", "check", "l", "f", "h", "f1", "f2", "f3", "l1", "l2", "l3", "l4", "l5", "l6", "c1", "c2"],
+                roles = ["unknown", "check", "l", "f", "c", "h", "f1", "f2", "f3", "l1", "l2", "l3", "l4", "l5", "l6", "c1", "c2"],
                 plates = ["pres", "can", "prev-pres", "prev-can"],
                 actions = ["", "inspect-deck", "inspect", "election", "shooting", "shooting-veto"],
                 voteMarksUp = [],
@@ -115,7 +115,7 @@ class PlayerSlot extends React.Component {
             let role, plate;
             if (slotData && slotData.role === "h")
                 role = "h";
-            else if (data.phase !== "idle" && data.players[data.userSlot] && data.players[data.userSlot].role !== "f"
+            else if (data.phase !== "idle" && data.players[data.userSlot] && (data.players[data.userSlot].role !== "f" || data.triTeam)
                 && data.players[data.userSlot].inspect && data.players[data.userSlot].inspect.slot === slot)
                 role = data.players[data.userSlot].inspect.party;
             else if (slotData) {
@@ -481,6 +481,8 @@ class Game extends React.Component {
             this.processEffects(this.state, state);
             if (this.state.phase === "select-can" && state.phase === "voting")
                 this.votesTiltUpdate();
+            if (this.state.triTeam !== state.triTeam)
+                this.calcSlotCoords(state.triTeam);
             this.setState(Object.assign(state, {
                 userId: this.userId,
                 userSlot: ~state.playerSlots.indexOf(this.userId)
@@ -532,12 +534,11 @@ class Game extends React.Component {
         this.timerSound = new Audio("/secret-hitler/media/tick.mp3");
         this.timerSound.volume = 0.4;
         this.votesTiltUpdate();
-        this.calcSlotCoords();
     }
 
-    calcSlotCoords() {
+    calcSlotCoords(triTeam) {
         this.tableW = 691;
-        this.tableH = 397;
+        this.tableH = !triTeam ? 397 : 496;
         this.slotMap = [
             [0, 1], [1, 0], [2, 0], [3, 0], [4, 1],
             [4, 2], [3, 3], [2, 3], [1, 3], [0, 2]
@@ -697,6 +698,7 @@ class Game extends React.Component {
 
     handleSetTriTeam(state) {
         if (this.state.triTeam !== state
+            && (this.state.phase === "idle" || !this.isNotEnoughPlayers(state))
             && (this.state.phase === "idle"
                 || this.state.partyWin !== null
                 || confirm("Game will be aborted. Are you sure?")))
@@ -831,11 +833,15 @@ class Game extends React.Component {
         return !!parseInt(localStorage.muteSounds);
     }
 
+    isNotEnoughPlayers(triTeam) {
+        return this.state.playerSlots
+            .filter((slot) => slot !== null).length < (!triTeam ? 5 : 9);
+    }
+
     getStatus() {
         const
             data = this.state,
-            notEnoughPlayers = data.phase === "idle" && data.playerSlots
-                .filter((slot) => slot !== null).length < (!data.triTeam ? 5 : 9);
+            notEnoughPlayers = this.state.phase === "idle" && this.isNotEnoughPlayers(this.state.triTeam);
         let status;
         if (data.inited) {
             const
@@ -931,7 +937,7 @@ class Game extends React.Component {
                         medium: ["", "", "", "", ""],
                         large: ["", "", "", "", ""]
                     }[gameType],
-                    actionsOrderC = ["inspect", "election", "shooting-veto"],
+                    actionsOrderC = ["inspect", "election", "shooting-veto", ""],
                     actions = ["", "inspect-deck", "inspect", "election", "shooting", "shooting-veto"],
                     welcomeMessage = <div className="welcome-message">
                         {data.phase === "idle" && data.partyWin === null
@@ -992,7 +998,8 @@ class Game extends React.Component {
                             active: this.state.inited,
                             "lib-win": this.state.partyWin === "l",
                             "fasc-win": this.state.partyWin === "f",
-                            "com-win": this.state.partyWin === "c"
+                            "com-win": this.state.partyWin === "c",
+                            "tri-team": this.state.triTeam
                         })}>
                             {data.timed ? (<div className="watch">
                                 <div className="watch-hand" id="watch-hand"/>
@@ -1041,7 +1048,7 @@ class Game extends React.Component {
                                                     {[0, 1, 2, 3].map((it) => (
                                                         <div
                                                             className={cs("policy-slot", `slot-${it}`)}
-                                                            style={{"background-position-x": actions.indexOf(actionsOrderF[it]) * -38.5}}>
+                                                            style={{"background-position-x": actions.indexOf(actionsOrderC[it]) * -38.5}}>
                                                             {(data.comTrack >= it + 1) ? (
                                                                 <div className="policy-card c"/>) : ""}
                                                         </div>))}
@@ -1176,47 +1183,48 @@ class Game extends React.Component {
                                             game={this}/>
                             </div>
                             <div className="host-controls" onTouchStart={(e) => e.target.focus()}>
-                                {data.timed ? (<div className="host-controls-menu">
-                                    <div className="little-controls">
-                                        <div className="game-settings little-controls">
-                                            <div className="set-time"><i className="material-icons"
-                                                                         title="Time to enact policy and inspect">alarm
-                                                filter_1</i>
-                                                {(isHost && data.paused) ? (<input type="number"
-                                                                                   value={this.state.smallActionTime}
-                                                                                   min="1"
-                                                                                   onChange={evt => !isNaN(evt.target.valueAsNumber)
-                                                                                       && this.handleChangeTime(evt.target.valueAsNumber, "smallAction")}
-                                                />) : (<span className="value">{this.state.smallActionTime}</span>)}
-                                                <i className="material-icons"
-                                                   title="Time to all other actions besides 1">filter_2</i>
-                                                {(isHost && data.paused) ? (<input type="number"
-                                                                                   value={this.state.actionTime}
-                                                                                   min="1"
-                                                                                   onChange={evt => !isNaN(evt.target.valueAsNumber)
-                                                                                       && this.handleChangeTime(evt.target.valueAsNumber, "action")}
-                                                />) : (<span className="value">{this.state.actionTime}</span>)}
+                                <div className="host-controls-menu">
+                                    {data.timed ? (<div className="little-controls">
+                                            <div className="game-settings">
+                                                <div className="set-time"><i className="material-icons"
+                                                                             title="Time to enact policy and inspect">alarm
+                                                    filter_1</i>
+                                                    {(isHost && data.paused) ? (<input type="number"
+                                                                                       value={this.state.smallActionTime}
+                                                                                       min="1"
+                                                                                       onChange={evt => !isNaN(evt.target.valueAsNumber)
+                                                                                           && this.handleChangeTime(evt.target.valueAsNumber, "smallAction")}
+                                                    />) : (<span className="value">{this.state.smallActionTime}</span>)}
+                                                    <i className="material-icons"
+                                                       title="Time to all other actions besides 1">filter_2</i>
+                                                    {(isHost && data.paused) ? (<input type="number"
+                                                                                       value={this.state.actionTime}
+                                                                                       min="1"
+                                                                                       onChange={evt => !isNaN(evt.target.valueAsNumber)
+                                                                                           && this.handleChangeTime(evt.target.valueAsNumber, "action")}
+                                                    />) : (<span className="value">{this.state.actionTime}</span>)}
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </div>) : ""}
-                                <div className="little-controls">
-                                    <span
-                                        className={cs({
-                                            "settings-button": isHost,
-                                            "level-selected": !this.state.triTeam
-                                        })}
-                                        onClick={() => this.handleSetTriTeam(false)}>
+                                    ) : ""}
+                                    <div className="little-controls start-game-buttons">
+                                        <div
+                                            className={cs({
+                                                "settings-button": isHost,
+                                                "level-selected": !this.state.triTeam
+                                            })}
+                                            onClick={() => this.handleSetTriTeam(false)}>
                                             Normal
-                                            </span>
-                                    <span
-                                        className={cs({
-                                            "settings-button": isHost,
-                                            "level-selected": this.state.triTeam
-                                        })}
-                                        onClick={() => this.handleSetTriTeam(true)}>
+                                        </div>
+                                        <div
+                                            className={cs({
+                                                "settings-button": isHost,
+                                                "level-selected": this.state.triTeam
+                                            })}
+                                            onClick={() => this.handleSetTriTeam(true)}>
                                             3 teams
-                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div className="side-buttons">
                                     <i onClick={() => window.location = parentDir}
