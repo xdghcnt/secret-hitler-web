@@ -168,8 +168,9 @@ class PlayerSlot extends React.Component {
                             {~data.playersNotHitler.indexOf(slot)
                                 ? (<div className="not-hitler-card"/>) : ""}
                             {data.phase === "pres-action" && data.currentPres === slot
-                                ? (<div className="policy-slot"
-                                        style={{"background-position-x": actions.indexOf(data.presAction) * -38.5}}/>) : ""}
+                                ? (<div
+                                    className={cs("policy-slot", data.whiteBoard[data.whiteBoard.length - 1].card.toLowerCase())}
+                                    style={{"background-position-x": actions.indexOf(data.presAction) * -38.5}}/>) : ""}
                             {(data.presAction === "inspect" && data.currentPres === data.userSlot && slot !== data.userSlot
                                 && ~data.activeSlots.indexOf(slot) && !~data.playersInspected.indexOf(slot)
                                 && !~data.playersShot.indexOf(slot))
@@ -958,7 +959,7 @@ class Game extends React.Component {
                         });
                     else if (it.type === "inspect" && lastClaim !== "?")
                         arrowList.push({
-                            type: {l: "lib", f: "fasc", c: "fasc"}[lastClaim],
+                            type: {l: "lib", f: "fasc", c: "com"}[lastClaim],
                             aSlot: it.pres,
                             bSlot: it.slot,
                             directed: true,
@@ -1026,6 +1027,11 @@ class Game extends React.Component {
                                                         markerWidth="10" markerHeight="10" refX="7" refY="4"
                                                         viewBox="0 0 27 20">
                                                     <path d="M0,0 L0,8 L8,4 z" className="color-fasc"/>
+                                                </marker>
+                                                <marker id="markerArrow-com" orient="auto-start-reverse"
+                                                        markerWidth="10" markerHeight="10" refX="7" refY="4"
+                                                        viewBox="0 0 27 20">
+                                                    <path d="M0,0 L0,8 L8,4 z" className="color-com"/>
                                                 </marker>
                                             </defs>
                                             {arrowList.map((it) => (

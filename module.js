@@ -7,7 +7,7 @@ function init(wsServer, path) {
         app = wsServer.app,
         registry = wsServer.users,
         channel = "secret-hitler",
-        testMode = process.argv[2] === "debug";
+        testMode = true;
 
     app.post("/secret-hitler/upload-avatar", function (req, res) {
         registry.log(`secret-hitler - ${req.body.userId} - upload-avatar`);
@@ -329,7 +329,7 @@ function init(wsServer, path) {
                             large: ["inspect", "inspect", "election", "shooting", "shooting"]
                         }[gameType][room.fascTrack - 1];
                     else if (enactedCard === "c")
-                        room.presAction = ["inspect", "give-pres", "shooting"][room.comTrack - 1];
+                        room.presAction = ["inspect", "election", "shooting"][room.comTrack - 1];
                     if (room.presAction === "inspect-deck") {
                         players[room.currentPres].cards = state.deck.splice(0, 3);
                         sendStateSlot(room.currentPres);
@@ -643,8 +643,12 @@ function init(wsServer, path) {
                                     newClaim[1] = claim.split(">")[1];
                                 else if (claim === "FFF")
                                     newClaim[1] = "FF";
+                                else if (claim === "CCC")
+                                    newClaim[1] = "CC";
                                 else if (claim === "FFL")
                                     newClaim[1] = "FL";
+                                else if (claim === "CCL")
+                                    newClaim[1] = "CL";
                                 else if (claim === "LLL")
                                     newClaim[1] = "LL";
                                 action.presClaimed = true;

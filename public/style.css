@@ -382,7 +382,7 @@ body {
 
 .game-track-section {
     width: 452px;
-    height: 193px;
+    height: 194px;
     background: url(media/policy-track.png) bottom;
     background-size: cover;
     display: flex;
@@ -601,7 +601,7 @@ body {
     background-size: cover;
 }
 
-.com-track .policy-slot {
+.com-track .policy-slot, .policy-slot.c {
     background: url(media/pres-actions-com.png);
     background-size: cover;
 }
@@ -641,7 +641,7 @@ body {
 }
 
 .deck.discard {
-    padding-left: 2px;
+    padding-left: 0;
 }
 
 .deck-count {
