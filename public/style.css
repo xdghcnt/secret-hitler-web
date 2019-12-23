@@ -1191,6 +1191,11 @@ body {
     background-size: cover;
 }
 
+.ptn .com-track .policy-slot, .ptn .policy-slot.c {
+    background: url(media/ptn/pres-actions-com.png);
+    background-size: cover;
+}
+
 .ptn .game-track-section {
     background: url(media/ptn/policy-track.png);
     background-size: cover;

@@ -7,7 +7,7 @@ function init(wsServer, path) {
         app = wsServer.app,
         registry = wsServer.users,
         channel = "secret-hitler",
-        testMode = true;
+        testMode = process.argv[2] === "debug";
 
     app.post("/secret-hitler/upload-avatar", function (req, res) {
         registry.log(`secret-hitler - ${req.body.userId} - upload-avatar`);
