@@ -1150,7 +1150,7 @@ body {
 }
 
 .ptn .player-role {
-    background: url(media/ptn/roles.png);
+    background: url(media/ptn/roles.jpg);
     background-size: cover;
 }
 
@@ -1196,6 +1196,13 @@ body {
     background-size: cover;
 }
 
+
+
+.ptn .tri-team .game-track-section {
+    background: url(media/ptn/policy-track-tri.png) bottom;
+    background-size: cover;
+}
+
 .ptn .policy-card {
     background: url(media/ptn/policy-cards.png);
     background-size: cover;
@@ -1209,12 +1216,20 @@ body {
     background-position-x: -219px;
 }
 
+.ptn .policy-card.c {
+    background-position-x: -329px;
+}
+
 .ptn .game-track .policy-card.f {
     background-position-x: -77px;
 }
 
 .ptn .game-track .policy-card.l {
     background-position-x: -38px;
+}
+
+.ptn .game-track .policy-card.c {
+    background-position-x: -116px;
 }
 
 .player-role.zoomed {
