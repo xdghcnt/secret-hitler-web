@@ -451,7 +451,9 @@ class Game extends React.Component {
             localStorage.secretHitlerUserToken = makeId();
         }
         if (!location.hash)
-            history.replaceState(undefined, undefined, "#" + makeId());
+            history.replaceState(undefined, undefined, location.origin + location.pathname + "#" + makeId());
+        else
+            history.replaceState(undefined, undefined, location.origin + location.pathname + location.hash);
         initArgs.avatarId = localStorage.avatarId;
         initArgs.roomId = location.hash.substr(1);
         initArgs.userId = this.userId = localStorage.secretHitlerUserId;
