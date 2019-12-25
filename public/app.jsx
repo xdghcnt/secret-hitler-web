@@ -943,9 +943,9 @@ class Game extends React.Component {
                     actions = ["", "inspect-deck", "inspect", "election", "shooting", "shooting-veto"],
                     welcomeMessage = <div className="welcome-message">
                         {data.phase === "idle" && data.partyWin === null
-                            ? (slotsCount >= 5
+                            ? (!this.isNotEnoughPlayers(data.triTeam)
                                 ? `${isHost ? "You" : "Host"} can start ${slotsCount} player game`
-                                : "At least 5 players needed")
+                                : `At least ${!data.triTeam ? 5 : 9} players needed`)
                             : <span>{data.activeSlots.length} player game started</span>}
                     </div>,
                     arrowList = [];
