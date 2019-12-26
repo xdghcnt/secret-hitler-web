@@ -1,6 +1,6 @@
 const
     wsServer = new (require("ws-server-engine"))("a", {
-        pingInterval: 10000,
+        pingInterval: 100000,
         maxConnections: 2,
         inactivityTimeout: false,
         dumpInterval: 60000,
