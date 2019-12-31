@@ -141,6 +141,10 @@ class PlayerSlot extends React.Component {
                 plate = ["can", true];
             else if (data.prevPres === slot && !isOnlyFive)
                 plate = ["prev-pres", false, true];
+            const lastAction = data.whiteBoard[data.whiteBoard.length - 1];
+            const lastCard = lastAction.type !== "reshuffle"
+                ? lastAction.card
+                : data.whiteBoard[data.whiteBoard.length - 2].card;
             return (
                 <div
                     className={cs("player-slot", `player-slot-${slot}`, {
@@ -169,7 +173,7 @@ class PlayerSlot extends React.Component {
                                 ? (<div className="not-hitler-card"/>) : ""}
                             {data.phase === "pres-action" && data.currentPres === slot
                                 ? (<div
-                                    className={cs("policy-slot", data.whiteBoard[data.whiteBoard.length - 1].card.toLowerCase())}
+                                    className={cs("policy-slot", lastCard.toLowerCase())}
                                     style={{"background-position-x": actions.indexOf(data.presAction) * -38.5}}/>) : ""}
                             {(data.presAction === "inspect" && data.currentPres === data.userSlot && slot !== data.userSlot
                                 && ~data.activeSlots.indexOf(slot) && !~data.playersInspected.indexOf(slot)
