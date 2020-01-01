@@ -142,9 +142,11 @@ class PlayerSlot extends React.Component {
             else if (data.prevPres === slot && !isOnlyFive)
                 plate = ["prev-pres", false, true];
             const lastAction = data.whiteBoard[data.whiteBoard.length - 1];
-            const lastCard = lastAction.type !== "reshuffle"
-                ? lastAction.card
-                : data.whiteBoard[data.whiteBoard.length - 2].card;
+            let lastCard = "";
+            if (lastAction)
+                lastCard = lastAction && lastAction.type !== "reshuffle"
+                    ? lastAction.card
+                    : data.whiteBoard[data.whiteBoard.length - 2].card;
             return (
                 <div
                     className={cs("player-slot", `player-slot-${slot}`, {
