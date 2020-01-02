@@ -249,7 +249,7 @@ function init(wsServer, path) {
                         state.deck = shuffleArray([]
                             .concat(Array(room.fCount).fill("f"))
                             .concat(Array(room.lCount).fill("l"))
-                            .concat(Array(room.cCount).fill("c"))
+                            .concat(room.triTeam ? Array(room.cCount).fill("c") : [])
                         );
                         state.discardDeck = [];
                         startSelectCan();
