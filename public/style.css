@@ -1035,6 +1035,10 @@ body {
     pointer-events: stroke;
 }
 
+.arrow.libConf {
+    stroke-dasharray: 4;
+}
+
 .arrow:hover {
     opacity: 0.9;
 }

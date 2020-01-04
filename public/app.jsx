@@ -959,7 +959,7 @@ class Game extends React.Component {
                     const lastClaim = it.claims && it.claims[it.claims.length - 1];
                     if (it.type === "enact" && !~lastClaim.indexOf("??") && lastClaim[1] !== lastClaim[2])
                         arrowList.push({
-                            type: "fasc",
+                            type: {F: "fasc", C: "com", L: "lib"}[lastClaim[3]],
                             aSlot: it.pres,
                             bSlot: it.can,
                             index
@@ -1048,7 +1048,9 @@ class Game extends React.Component {
                                                     markerStart={it.directed ? "" : `url(#markerArrow-${it.type})`}
                                                     markerEnd={`url(#markerArrow-${it.type})`}
                                                     onClick={() => this.toggleWhiteBoardExpanded(it.index)}
-                                                    className={cs("arrow", `color-${it.type}`)}/>
+                                                    className={cs("arrow", `color-${it.type}`, {
+                                                        libConf: it.type === "lib" && !it.directed
+                                                    })}/>
                                             ))}
                                         </svg>
                                         <div className="game-track-section">
