@@ -370,6 +370,8 @@ function init(wsServer, path) {
                         lastClaim.type = "enact";
                         lastClaim.claims = [["???", "??", (!room.triTeam && card === "f") ? "FF" : "??", card.toUpperCase()]];
                         lastClaim.card = card.toUpperCase();
+                        if (room.vetoRequest === false)
+                            lastClaim.vetoDenied = true;
                     }
                     room.vetoRequest = null;
                     room.skipTrack = 0;
@@ -605,10 +607,10 @@ function init(wsServer, path) {
                     if (room.phase === "can-draw" && room.currentPres === slot && room.vetoRequest) {
                         if (accept) {
                             state.discardDeck.push(...players[room.currentCan].cards.splice(0));
+                            room.whiteBoard[room.whiteBoard.length - 1].type = "veto";
                             sendStateSlot(room.currentPres);
                             processReshuffle();
                             incrSkipTrack();
-                            room.whiteBoard[room.whiteBoard.length - 1].type = "veto";
                             if (room.partyWin === null)
                                 nextPres();
                         } else

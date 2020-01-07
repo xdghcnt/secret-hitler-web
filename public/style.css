@@ -1245,3 +1245,23 @@ body {
     zoom: 2.9;
     z-index: 3;
 }
+
+.veto-bubble:after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    border: 11px solid transparent;
+    border-top-color: #adadadc2;
+    border-bottom: 0;
+    border-left: 0;
+    margin-bottom: -11px;
+}
+.veto-bubble {
+    z-index: 1;
+    background: #adadadc2;
+    padding: 6px 17px;
+    position: absolute;
+    left: 94px;
+    top: -13px;
+}

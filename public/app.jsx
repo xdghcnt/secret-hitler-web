@@ -195,6 +195,8 @@ class PlayerSlot extends React.Component {
                                         onClick={() => game.handleShot(slot)}><i
                                     className="material-icons">my_location</i></div>)
                                 : ""}
+                            {data.vetoRequest && data.currentCan === slot ? <div className="veto-bubble">Veto?</div> : ""}
+                            {data.vetoRequest === false && data.currentPres === slot ? <div className="veto-bubble">Veto denied</div> : ""}
                         </div>
                         {~data.playersShot.indexOf(slot)
                             ? (<div className="shot-mark"
@@ -272,7 +274,7 @@ class NoteItem extends React.Component {
                 space = <span className="log-space"/>,
                 lastLine = item.claims && item.claims[item.claims.length - 1],
                 prevLines = item.claims && item.claims.slice(1, item.claims.length - 1),
-                getEnactLine = (lineOrig) => {
+                getEnactLine = (lineOrig, last) => {
                     const line = lineOrig && lineOrig.slice();
                     if (line && (line[1] === line[2] || line[1] === "??" || line[2] === "??"))
                         line.splice(1, 1);
@@ -284,7 +286,9 @@ class NoteItem extends React.Component {
                         <span className={`color-slot-${item.can}`}>{slotNames[item.can]}</span>{colon}
                         {item.type === "enact"
                             ? line.map((cards, ind) => [ind ? arrow : "", cards.split("").map((card) => cardTypes[card])])
-                            : <span className="color-down">Downvoted</span>}</div>;
+                            : <span className="color-down">Downvoted</span>}
+                        {last && item.vetoDenied === true ? (<span>{space}(Veto denied)</span>) : ""}
+                    </div>;
                 },
                 getInspectLine = (line) => {
                     return <div className="inspect-line">
@@ -313,7 +317,7 @@ class NoteItem extends React.Component {
                 note = "",
                 noteExpanded = "";
             if (item.type === "enact")
-                note = getEnactLine(lastLine.slice());
+                note = getEnactLine(lastLine.slice(), true);
             else if (item.type === "skip")
                 note = getEnactLine();
             else if (item.type === "topdeck")
