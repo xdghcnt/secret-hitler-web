@@ -22,7 +22,6 @@
     text-align: left;
     border-bottom: 1px solid;
     padding-bottom: 6px;
-    height: 25px;
 }
 
 .little-controls input {
@@ -82,7 +81,7 @@
 }
 
 body {
-    background: url(bg.png) black;
+    background: url(media/bg.png) black;
     background-position: bottom;
     background-repeat: no-repeat;
     background-size: cover;
@@ -251,7 +250,7 @@ body {
     position: absolute;
     top: -9px;
     left: -16px;
-    background: url(roles.jpg);
+    background: url(media/roles.jpg);
     background-size: cover;
     box-shadow: 0 0 1px 1px #6b6b6b;
 }
@@ -376,17 +375,22 @@ body {
     display: flex;
     border: 13px solid #4c1c1c;
     box-sizing: border-box;
-    background: url(table-bg.jpg);
+    background: url(media/table-bg.jpg);
     background-size: contain;
     position: relative;
 }
 
 .game-track-section {
-    width: 438px;
-    height: 201px;
-    background: url(policy-track.png);
+    width: 452px;
+    height: 194px;
+    background: url(media/policy-track.png) bottom;
     background-size: cover;
     display: flex;
+}
+
+.tri-team .game-track-section {
+    background: url(media/policy-track-tri.png) bottom;
+    background-size: cover;
 }
 
 .middle-row {
@@ -442,7 +446,7 @@ body {
 }
 
 .plate {
-    background: url(plates.jpg);
+    background: url(media/plates.jpg);
     width: 115px;
     height: 40px;
     background-size: cover;
@@ -470,7 +474,7 @@ body {
 .vote-card {
     width: 114px;
     height: 159px;
-    background: url(voting-cards.png);
+    background: url(media/voting-cards.png);
     margin: 8px;
     background-size: cover;
 }
@@ -547,7 +551,7 @@ body {
 .policy-card {
     width: 111px;
     height: 159px;
-    background: url(policy-cards.png);
+    background: url(media/policy-cards.png);
     margin: 8px;
     background-size: cover;
 }
@@ -564,6 +568,10 @@ body {
     background-position-x: -219px;
 }
 
+.policy-card.c {
+    background-position-x: -329px;
+}
+
 .player-role.check-button {
     cursor: pointer;
     opacity: 0.6;
@@ -571,19 +579,30 @@ body {
 
 .fasc-track {
     display: flex;
-    padding: 41px 25px;
+    padding: 37px 31px;
 }
 
 .lib-track {
     display: flex;
-    padding: 10px 47px;
+    padding: 13px 53px;
+}
+
+.com-track {
+    display: flex;
+    padding: 13px 79px;
+    padding-top: 38px;
 }
 
 .policy-slot {
     width: 38px;
     height: 38px;
-    margin: 0 4.3px;
-    background: url(pres-actions.png);
+    margin: 0 3.8px;
+    background: url(media/pres-actions.png);
+    background-size: cover;
+}
+
+.com-track .policy-slot, .policy-slot.c {
+    background: url(media/pres-actions-com.png);
     background-size: cover;
 }
 
@@ -601,6 +620,10 @@ body {
     margin: 7px;
 }
 
+.game-track .policy-card.c {
+    background-position-x: -116px;
+}
+
 .game-track .policy-card.f {
     background-position-x: -77px;
 }
@@ -614,16 +637,22 @@ body {
     flex-direction: column;
     align-self: flex-end;
     padding-bottom: 15px;
-    padding-left: 1px;
+    padding-left: 4px;
+}
+
+.deck.discard {
+    padding-left: 0;
 }
 
 .deck-count {
     color: white;
     text-align: center;
-    margin-bottom: -9px;
+    margin-bottom: -8px;
     font-size: 20px;
     font-weight: bold;
-    background: #00000057;
+    background: #0000004d;
+    width: 42px;
+    align-self: center;
 }
 
 .skip-token {
@@ -634,7 +663,7 @@ body {
 }
 
 .skip-track {
-    padding: 3px 110.7px;
+    padding: 1.2px 117.7px;
 }
 
 .skip-token.skip-1 {
@@ -655,20 +684,24 @@ body {
     z-index: -1;
 }
 
-.lib-win .win-banners, .fasc-win .win-banners {
+.lib-win .win-banners, .fasc-win .win-banners, .com-win .win-banners {
     display: block;
 }
 
 .banner {
     height: 550px;
     width: 91px;
-    background: url(banners.png);
+    background: url(media/banners.png);
     position: absolute;
     background-size: cover;
 }
 
 .lib-win .banner {
     background-position-x: -90px;
+}
+
+.com-win .banner {
+    background-position-x: -181px;
 }
 
 .banner.left {
@@ -745,7 +778,7 @@ body {
 }
 
 .not-hitler-card {
-    background: url(not-hitler.png);
+    background: url(media/not-hitler.png);
     width: 57px;
     height: 33px;
     position: absolute;
@@ -792,6 +825,12 @@ body {
     color: #d60704;
     stroke: #d60704;
     fill: #d60704;
+}
+
+.color-com {
+    color: #f4a954;
+    stroke: #f4a954;
+    fill: #f4a954;
 }
 
 .color-unknown {
@@ -996,6 +1035,10 @@ body {
     pointer-events: stroke;
 }
 
+.arrow.libConf {
+    stroke-dasharray: 4;
+}
+
 .arrow:hover {
     opacity: 0.9;
 }
@@ -1034,7 +1077,7 @@ body {
     position: absolute;
     top: 6px;
     left: 21px;
-    background: url(watch.png);
+    background: url(media/watch.png);
     background-size: contain;
     opacity: 0.6;
 }
@@ -1042,7 +1085,7 @@ body {
 .watch-hand {
     width: 102px;
     height: 101px;
-    background: url(watch-hand.png) no-repeat center center;
+    background: url(media/watch-hand.png) no-repeat center center;
     position: absolute;
     bottom: 0;
     background-size: contain;
@@ -1069,40 +1112,64 @@ body {
     cursor: default !important;
 }
 
+.little-controls.start-game-buttons {
+    padding-bottom: 0;
+    text-align: center;
+}
+
+.settings-button.level-selected {
+    background: #cacaca;
+}
+
+.start-game-buttons div {
+    display: inline-block;
+    padding: 17px;
+}
+
+.tri-team .game-track-section {
+    height: 283px;
+}
+
+.tri-team .game-table-top {
+    height: 494px;
+    background: url(media/table-bg-tri.jpg);
+    background-size: contain;
+}
+
 .ptn body {
-    background: url(ptn/bg.png) black;
+    background: url(media/ptn/bg.png) black;
     background-position: bottom;
     background-repeat: no-repeat;
     background-size: cover;
 }
 
 .ptn .not-hitler-card {
-    background: url(ptn/not-hitler.png);
+    background: url(media/ptn/not-hitler.png);
     background-size: contain;
 }
 
 .ptn .plate {
-    background: url(ptn/plates.png);
+    background: url(media/ptn/plates.png);
     background-size: cover;
 }
 
 .ptn .player-role {
-    background: url(ptn/roles.png);
+    background: url(media/ptn/roles.jpg);
     background-size: cover;
 }
 
 .ptn .watch {
-    background: url(ptn/watch.png);
+    background: url(media/ptn/watch.png);
     background-size: contain;
 }
 
 .ptn .watch-hand {
-    background: url(ptn/watch-hand.png) no-repeat center center;
+    background: url(media/ptn/watch-hand.png) no-repeat center center;
     background-size: contain;
 }
 
 .ptn .vote-card {
-    background: url(ptn/voting-cards.png) no-repeat center center;
+    background: url(media/ptn/voting-cards.png) no-repeat center center;
     background-size: cover;
     background-position-x: 0;
 }
@@ -1124,17 +1191,29 @@ body {
 }
 
 .ptn .policy-slot {
-    background: url(ptn/pres-actions.png);
+    background: url(media/ptn/pres-actions.png);
+    background-size: cover;
+}
+
+.ptn .com-track .policy-slot, .ptn .policy-slot.c {
+    background: url(media/ptn/pres-actions-com.png);
     background-size: cover;
 }
 
 .ptn .game-track-section {
-    background: url(ptn/policy-track.png);
+    background: url(media/ptn/policy-track.png);
+    background-size: cover;
+}
+
+
+
+.ptn .tri-team .game-track-section {
+    background: url(media/ptn/policy-track-tri.png) bottom;
     background-size: cover;
 }
 
 .ptn .policy-card {
-    background: url(ptn/policy-cards.png);
+    background: url(media/ptn/policy-cards.png);
     background-size: cover;
 }
 
@@ -1146,6 +1225,10 @@ body {
     background-position-x: -219px;
 }
 
+.ptn .policy-card.c {
+    background-position-x: -329px;
+}
+
 .ptn .game-track .policy-card.f {
     background-position-x: -77px;
 }
@@ -1154,7 +1237,31 @@ body {
     background-position-x: -38px;
 }
 
-.ptn .player-role.zoomed {
+.ptn .game-track .policy-card.c {
+    background-position-x: -116px;
+}
+
+.player-role.zoomed {
     zoom: 2.9;
     z-index: 3;
+}
+
+.veto-bubble:after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    border: 11px solid transparent;
+    border-top-color: #adadadc2;
+    border-bottom: 0;
+    border-left: 0;
+    margin-bottom: -11px;
+}
+.veto-bubble {
+    z-index: 1;
+    background: #adadadc2;
+    padding: 6px 17px;
+    position: absolute;
+    left: 94px;
+    top: -13px;
 }

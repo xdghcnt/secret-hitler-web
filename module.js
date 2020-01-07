@@ -30,6 +30,7 @@ function init(wsServer, path) {
     app.use("/secret-hitler", express.static(`${__dirname}/public`));
     if (registry.config.appDir)
         app.use("/secret-hitler", express.static(`${registry.config.appDir}/public`));
+
     registry.handleAppPage(path, `${__dirname}/public/app.html`);
 
     class GameState extends EventEmitter {
@@ -39,6 +40,7 @@ function init(wsServer, path) {
                 getResetParams = () => ({
                     libTrack: 0,
                     fascTrack: 0,
+                    comTrack: 0,
                     skipTrack: 0,
                     activeSlots: new JSONSet(),
                     presAction: null,
@@ -57,6 +59,7 @@ function init(wsServer, path) {
                     specialElection: false,
                     fCount: 11,
                     lCount: 6,
+                    cCount: 6,
                     paused: false,
                     time: null,
                     timeTotal: null
@@ -79,13 +82,14 @@ function init(wsServer, path) {
                     phase: "idle",
                     deckSize: state.deck.length,
                     discardSize: state.discardDeck.length,
-                    libWin: null,
+                    partyWin: null,
                     shufflePlayers: true,
                     rebalanced: false,
                     timed: false,
                     timeChanged: false,
                     actionTime: 180,
                     smallActionTime: 30,
+                    triTeam: false,
                     testMode
                 },
                 resetRoom = () => Object.assign(room, getResetParams()),
@@ -93,7 +97,7 @@ function init(wsServer, path) {
             resetRoom();
             let playerRoles = {};
             if (testMode)
-                [1, 2, 3, 4, 5, 6, 7].forEach((ind) => {
+                [1, 2, 3, 4, 5, 6, 7, 8, 9].forEach((ind) => {
                     room.playerSlots[ind] = `kek${ind}`;
                     room.playerNames[`kek${ind}`] = `kek${ind}`;
                 });
@@ -113,7 +117,16 @@ function init(wsServer, path) {
                         send(user, "player-state", players);
                     else if (players[slot] && (players[slot].role === "f"
                         || (room.activeSlots.size < 7 && players[slot].role === "h")))
-                        send(user, "player-state", Object.assign({}, playerRoles, {[slot]: players[slot]}));
+                        if (!room.triTeam)
+                            send(user, "player-state", Object.assign({}, playerRoles, {[slot]: players[slot]}));
+                        else
+                            send(user, "player-state",
+                                Object.assign({}, getFilteredPlayers(["f", "h"]), {[slot]: players[slot]})
+                            );
+                    else if (players[slot] && (players[slot].role === "c"))
+                        send(user, "player-state",
+                            Object.assign({}, getFilteredPlayers(["c"]), {[slot]: players[slot]})
+                        );
                     else if (players[slot])
                         send(user, "player-state", {[slot]: players[slot]});
                     else
@@ -121,6 +134,14 @@ function init(wsServer, path) {
                 },
                 sendStateSlot = (slot) => sendState(room.playerSlots[slot]),
                 updateState = () => [...room.onlinePlayers].forEach(sendState),
+                getFilteredPlayers = (roles) => {
+                    return Object.keys(playerRoles)
+                        .filter((slot) => roles.includes(playerRoles[slot].role))
+                        .reduce((res, slot) => {
+                            res[slot] = playerRoles[slot];
+                            return res;
+                        }, {});
+                },
                 getRandomPlayer = (exclude, allowEmptySlot) => {
                     const res = [];
                     room.playerSlots.forEach((user, slot) => {
@@ -161,7 +182,9 @@ function init(wsServer, path) {
                                             type: "timer-fail",
                                             slotFailed: failed
                                         });
-                                        room.libWin = state.players[failed].role !== "l";
+                                        room.partyWin = state.players[failed].role !== "c"
+                                            ? (state.players[failed].role === "l" ? "f" : "l")
+                                            : shuffleArray(["f", "l"])[0];
                                     }
                                     endGame();
                                 }
@@ -173,9 +196,9 @@ function init(wsServer, path) {
                     const playersCount = room.playerSlots.filter((user) => user !== null).length;
                     if (isEnoughPlayers()) {
                         resetRoom();
-                        if (room.libWin !== null && room.shufflePlayers)
+                        if (room.partyWin !== null && room.shufflePlayers)
                             shufflePlayers();
-                        room.libWin = null;
+                        room.partyWin = null;
                         room.teamsLocked = true;
                         room.playerSlots.forEach((player, slot) => {
                             if (player != null) {
@@ -190,15 +213,25 @@ function init(wsServer, path) {
                                 delete players[slot];
                         });
                         const
-                            hitler = getRandomPlayer([]),
-                            fasc1 = getRandomPlayer([hitler]);
-                        players[hitler].role = "h";
-                        players[fasc1].role = "f";
+                            activeRoles = [],
+                            addRole = (role) => {
+                                let player = getRandomPlayer(activeRoles);
+                                players[player].role = role;
+                                activeRoles.push(player);
+                            };
+                        let player = getRandomPlayer(activeRoles);
+                        addRole("h");
+                        addRole("f");
                         if (playersCount > 6) {
-                            const fasc2 = getRandomPlayer([hitler, fasc1]);
-                            players[fasc2].role = "f";
-                            if (playersCount > 8)
-                                players[getRandomPlayer([hitler, fasc1, fasc2])].role = "f";
+                            addRole("f");
+                            if (playersCount > 8) {
+                                addRole("f");
+                                if (room.triTeam) {
+                                    addRole("c");
+                                    if (playersCount === 10)
+                                        addRole("c");
+                                }
+                            }
                         }
                         room.currentPres = getRandomPlayer([]);
                         playerRoles = {};
@@ -213,7 +246,11 @@ function init(wsServer, path) {
                             else if (room.activeSlots === 9)
                                 room.fCount = 9;
                         }
-                        state.deck = shuffleArray(Array(room.fCount).fill("f").concat(Array(room.lCount).fill("l")));
+                        state.deck = shuffleArray([]
+                            .concat(Array(room.fCount).fill("f"))
+                            .concat(Array(room.lCount).fill("l"))
+                            .concat(room.triTeam ? Array(room.cCount).fill("c") : [])
+                        );
                         state.discardDeck = [];
                         startSelectCan();
                         updateState();
@@ -279,16 +316,19 @@ function init(wsServer, path) {
                     sendStateSlot(room.currentCan);
                     sendStateSlot(room.currentPres);
                 },
-                startPresAction = () => {
+                startPresAction = (enactedCard) => {
                     room.phase = "pres-action";
                     const
                         playerCount = room.activeSlots.size,
                         gameType = playerCount < 7 ? "small" : (playerCount < 9 ? "medium" : "large");
-                    room.presAction = {
-                        small: [null, null, "inspect-deck", "shooting", "shooting"],
-                        medium: [null, "inspect", "election", "shooting", "shooting"],
-                        large: ["inspect", "inspect", "election", "shooting", "shooting"]
-                    }[gameType][room.fascTrack - 1];
+                    if (enactedCard === "f")
+                        room.presAction = {
+                            small: [null, null, "inspect-deck", "shooting", "shooting"],
+                            medium: [null, "inspect", "election", "shooting", "shooting"],
+                            large: ["inspect", "inspect", "election", "shooting", "shooting"]
+                        }[gameType][room.fascTrack - 1];
+                    else if (enactedCard === "c")
+                        room.presAction = ["inspect", "election", "shooting"][room.comTrack - 1];
                     if (room.presAction === "inspect-deck") {
                         players[room.currentPres].cards = state.deck.splice(0, 3);
                         sendStateSlot(room.currentPres);
@@ -328,20 +368,30 @@ function init(wsServer, path) {
                     if (!isTopdeck) {
                         const lastClaim = room.whiteBoard[room.whiteBoard.length - 1];
                         lastClaim.type = "enact";
-                        lastClaim.claims = [["???", "??", card === "f" ? "FF" : "??", card.toUpperCase()]];
+                        lastClaim.claims = [["???", "??", (!room.triTeam && card === "f") ? "FF" : "??", card.toUpperCase()]];
                         lastClaim.card = card.toUpperCase();
+                        if (room.vetoRequest === false)
+                            lastClaim.vetoDenied = true;
                     }
                     room.vetoRequest = null;
                     room.skipTrack = 0;
-                    room[(card === "l" ? "libTrack" : "fascTrack")] += 1;
+                    room[{
+                        l: "libTrack",
+                        f: "fascTrack",
+                        c: "comTrack"
+                    }[card]] += 1;
                     if (room.libTrack === 5) {
-                        room.libWin = true;
+                        room.partyWin = "l";
                         endGame();
                     } else if (room.fascTrack === 6) {
-                        room.libWin = false;
+                        room.partyWin = "f";
                         endGame();
-                    }
-                    if (room.fascTrack === 5)
+                    } else if (room.comTrack === 4) {
+                        room.partyWin = "c";
+                        endGame();
+                    } else if (room.fascTrack === 5)
+                        room.vetoActive = true;
+                    else if (room.comTrack === 3)
                         room.vetoActive = true;
                     processReshuffle();
                 },
@@ -352,7 +402,7 @@ function init(wsServer, path) {
                         shuffleArray(state.deck);
                     }
                 },
-                isEnoughPlayers = () => room.playerSlots.filter((user) => user !== null).length > 4,
+                isEnoughPlayers = () => room.playerSlots.filter((user) => user !== null).length > (!room.triTeam ? 4 : 8),
                 endGame = () => {
                     room.phase = "idle";
                     room.paused = true;
@@ -452,7 +502,7 @@ function init(wsServer, path) {
                             });
                             if (votePassed) {
                                 if (room.fascTrack >= 3 && players[room.currentCan].role === "h") {
-                                    room.libWin = false;
+                                    room.partyWin = "f";
                                     endGame();
                                 } else {
                                     if (room.fascTrack >= 3)
@@ -489,7 +539,7 @@ function init(wsServer, path) {
                             if (enactedCard === "l")
                                 nextPres();
                             else
-                                startPresAction();
+                                startPresAction(enactedCard);
                         }
                     }
                 },
@@ -498,7 +548,7 @@ function init(wsServer, path) {
                         && !room.playersInspected.has(inspectSlot) && slot !== inspectSlot) {
                         players[slot].inspect = {
                             slot: inspectSlot,
-                            party: players[inspectSlot].role === "l" ? "l" : "f"
+                            party: players[inspectSlot].role === "h" ? "f" : players[inspectSlot].role
                         };
                         room.playersInspected.add(inspectSlot);
                         room.whiteBoard.push({
@@ -519,7 +569,8 @@ function init(wsServer, path) {
                         room.presAction = null;
                         room.whiteBoard.push({type: "shot", pres: room.currentPres, slot: shootSlot});
                         if (players[shootSlot].role === "h") {
-                            room.libWin = true;
+                            const presRole = players[room.currentPres].role;
+                            room.partyWin = presRole === "f" ? "l" : presRole;
                             endGame();
                         } else
                             nextPres();
@@ -547,7 +598,7 @@ function init(wsServer, path) {
                     }
                 },
                 "ask-veto": (slot) => {
-                    if (room.phase === "can-draw" && room.currentCan === slot && room.fascTrack === 5 && room.vetoRequest !== false) {
+                    if (room.phase === "can-draw" && room.currentCan === slot && room.vetoActive && room.vetoRequest !== false) {
                         room.vetoRequest = true;
                         update();
                     }
@@ -556,11 +607,11 @@ function init(wsServer, path) {
                     if (room.phase === "can-draw" && room.currentPres === slot && room.vetoRequest) {
                         if (accept) {
                             state.discardDeck.push(...players[room.currentCan].cards.splice(0));
+                            room.whiteBoard[room.whiteBoard.length - 1].type = "veto";
                             sendStateSlot(room.currentPres);
                             processReshuffle();
                             incrSkipTrack();
-                            room.whiteBoard[room.whiteBoard.length - 1].type = "veto";
-                            if (room.libWin === null)
+                            if (room.partyWin === null)
                                 nextPres();
                         } else
                             room.vetoRequest = false;
@@ -571,12 +622,10 @@ function init(wsServer, path) {
                     const action = room.whiteBoard[index];
                     if (action
                         && (action.pres === slot || action.can === slot)
-                        && ((action.type === "enact" && ~(action.pres === slot
-                                ? ["FFF", "FFL", "FLL>FL", "FLL>LL", "LLL", "FFL>FF"]
-                                : ["FF", "FL", "LL"]).indexOf(claim))
-                            || (action.type === "inspect" && ~["f", "l"].indexOf(claim))
+                        && (action.type === "enact"
+                            || (action.type === "inspect" && ["f", "l", "c"].includes(claim))
                             || (action.type === "inspect-deck"
-                                && ~["FFF", "FFL", "FLF", "LFF", "FLL", "LFL", "LLF", "LLL"].indexOf(claim))
+                                && /[FLC]{3}/.match(claim))
                         )
                         && !room.playersShot.has(slot)) {
                         let lastClaim = action.claims[action.claims.length - 1];
@@ -584,8 +633,7 @@ function init(wsServer, path) {
                             if (action.claims.length > 1)
                                 action.reclaimed = true;
                             action.claims.push(claim);
-                         }
-                        else if (action.type === "enact") {
+                        } else if (action.type === "enact") {
                             const
                                 newClaim = lastClaim.slice(),
                                 reclaim = (action.presClaimed && action.pres === slot)
@@ -596,13 +644,16 @@ function init(wsServer, path) {
                                     newClaim[1] = claim.split(">")[1];
                                 else if (claim === "FFF")
                                     newClaim[1] = "FF";
+                                else if (claim === "CCC")
+                                    newClaim[1] = "CC";
                                 else if (claim === "FFL")
                                     newClaim[1] = "FL";
+                                else if (claim === "CCL")
+                                    newClaim[1] = "CL";
                                 else if (claim === "LLL")
                                     newClaim[1] = "LL";
                                 action.presClaimed = true;
-                            }
-                            else if (action.can === slot) {
+                            } else if (action.can === slot) {
                                 newClaim[2] = claim;
                                 action.canClaimed = true;
                             }
@@ -633,6 +684,13 @@ function init(wsServer, path) {
                 "start-game": (user) => {
                     if (user === room.hostId)
                         startGame();
+                },
+                "tri-team-set": (user, state) => {
+                    if (user === room.hostId) {
+                        room.triTeam = !!state;
+                        update();
+                        startGame();
+                    }
                 },
                 "update-avatar": (user, id) => {
                     room.playerAvatars[user] = id;
@@ -666,6 +724,11 @@ function init(wsServer, path) {
                             } else room.paused = true;
                         }
                     }
+                    update();
+                },
+                "toggle-tri-team": (user) => {
+                    if (user === room.hostId && room.phase === 0)
+                        room.triTeam = !room.triTeam;
                     update();
                 },
                 "set-time": (user, type, value) => {

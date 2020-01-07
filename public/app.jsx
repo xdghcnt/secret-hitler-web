@@ -99,7 +99,7 @@ class PlayerSlot extends React.Component {
                 player = data.playerSlots[slot],
                 slotData = data.players[slot],
                 isOnlyFive = (data.activeSlots.length - data.playersShot.length) <= 5,
-                roles = ["unknown", "check", "l", "f", "h", "f1", "f2", "f3", "l1", "l2", "l3", "l4", "l5", "l6"],
+                roles = ["unknown", "check", "l", "f", "c", "h", "f1", "f2", "f3", "l1", "l2", "l3", "l4", "l5", "l6", "c1", "c2"],
                 plates = ["pres", "can", "prev-pres", "prev-can"],
                 actions = ["", "inspect-deck", "inspect", "election", "shooting", "shooting-veto"],
                 voteMarksUp = [],
@@ -115,7 +115,7 @@ class PlayerSlot extends React.Component {
             let role, plate;
             if (slotData && slotData.role === "h")
                 role = "h";
-            else if (data.phase !== "idle" && data.players[data.userSlot] && data.players[data.userSlot].role !== "f"
+            else if (data.phase !== "idle" && data.players[data.userSlot] && (data.players[data.userSlot].role !== "f" || data.triTeam)
                 && data.players[data.userSlot].inspect && data.players[data.userSlot].inspect.slot === slot)
                 role = data.players[data.userSlot].inspect.party;
             else if (slotData) {
@@ -141,6 +141,12 @@ class PlayerSlot extends React.Component {
                 plate = ["can", true];
             else if (data.prevPres === slot && !isOnlyFive)
                 plate = ["prev-pres", false, true];
+            const lastAction = data.whiteBoard[data.whiteBoard.length - 1];
+            let lastCard = "";
+            if (lastAction)
+                lastCard = lastAction && lastAction.type !== "reshuffle"
+                    ? lastAction.card
+                    : data.whiteBoard[data.whiteBoard.length - 2].card;
             return (
                 <div
                     className={cs("player-slot", `player-slot-${slot}`, {
@@ -159,7 +165,7 @@ class PlayerSlot extends React.Component {
                              style={{
                                  "background-image": player !== null ? `url(/secret-hitler/${data.playerAvatars[player]
                                      ? `avatars/${player}/${data.playerAvatars[player]}.png`
-                                     : "default-user.jpg"})` : ""
+                                     : "media/default-user.jpg"})` : ""
                              }}>
                             {role !== "unknown"
                                 ? (<div className="player-role"
@@ -168,8 +174,9 @@ class PlayerSlot extends React.Component {
                             {~data.playersNotHitler.indexOf(slot)
                                 ? (<div className="not-hitler-card"/>) : ""}
                             {data.phase === "pres-action" && data.currentPres === slot
-                                ? (<div className="policy-slot"
-                                        style={{"background-position-x": actions.indexOf(data.presAction) * -38.5}}/>) : ""}
+                                ? (<div
+                                    className={cs("policy-slot", lastCard.toLowerCase())}
+                                    style={{"background-position-x": actions.indexOf(data.presAction) * -38.5}}/>) : ""}
                             {(data.presAction === "inspect" && data.currentPres === data.userSlot && slot !== data.userSlot
                                 && ~data.activeSlots.indexOf(slot) && !~data.playersInspected.indexOf(slot)
                                 && !~data.playersShot.indexOf(slot))
@@ -188,6 +195,8 @@ class PlayerSlot extends React.Component {
                                         onClick={() => game.handleShot(slot)}><i
                                     className="material-icons">my_location</i></div>)
                                 : ""}
+                            {data.vetoRequest && data.currentCan === slot ? <div className="veto-bubble">Veto?</div> : ""}
+                            {data.vetoRequest === false && data.currentPres === slot ? <div className="veto-bubble">Veto denied</div> : ""}
                         </div>
                         {~data.playersShot.indexOf(slot)
                             ? (<div className="shot-mark"
@@ -254,8 +263,10 @@ class NoteItem extends React.Component {
                 cardTypes = {
                     F: <span className="color-fasc">F</span>,
                     L: <span className="color-lib">L</span>,
+                    C: <span className="color-com">C</span>,
                     f: <span className="color-fasc">Fascist</span>,
                     l: <span className="color-lib">Liberal</span>,
+                    c: <span className="color-com">Communist</span>,
                     "?": <span className="color-unknown">?</span>
                 },
                 arrow = <span className="log-arrow">&gt;</span>,
@@ -263,7 +274,7 @@ class NoteItem extends React.Component {
                 space = <span className="log-space"/>,
                 lastLine = item.claims && item.claims[item.claims.length - 1],
                 prevLines = item.claims && item.claims.slice(1, item.claims.length - 1),
-                getEnactLine = (lineOrig) => {
+                getEnactLine = (lineOrig, last) => {
                     const line = lineOrig && lineOrig.slice();
                     if (line && (line[1] === line[2] || line[1] === "??" || line[2] === "??"))
                         line.splice(1, 1);
@@ -275,7 +286,9 @@ class NoteItem extends React.Component {
                         <span className={`color-slot-${item.can}`}>{slotNames[item.can]}</span>{colon}
                         {item.type === "enact"
                             ? line.map((cards, ind) => [ind ? arrow : "", cards.split("").map((card) => cardTypes[card])])
-                            : <span className="color-down">Downvoted</span>}</div>;
+                            : <span className="color-down">Downvoted</span>}
+                        {last && item.vetoDenied === true ? (<span>{space}(Veto denied)</span>) : ""}
+                    </div>;
                 },
                 getInspectLine = (line) => {
                     return <div className="inspect-line">
@@ -304,7 +317,7 @@ class NoteItem extends React.Component {
                 note = "",
                 noteExpanded = "";
             if (item.type === "enact")
-                note = getEnactLine(lastLine.slice());
+                note = getEnactLine(lastLine.slice(), true);
             else if (item.type === "skip")
                 note = getEnactLine();
             else if (item.type === "topdeck")
@@ -387,8 +400,10 @@ class NoteButtons extends React.Component {
                 cardTypes = {
                     F: <span className="color-fasc">F</span>,
                     L: <span className="color-lib">L</span>,
+                    C: <span className="color-com">C</span>,
                     f: <span className="color-fasc">Fascist</span>,
                     l: <span className="color-lib">Liberal</span>,
+                    c: <span className="color-com">Communist</span>,
                     ">": <span className="log-arrow">&gt;</span>
                 };
             let actionIndex, action, isEdit, buttons = [];
@@ -412,20 +427,33 @@ class NoteButtons extends React.Component {
                 });
             if (action && !~data.playersShot.indexOf(data.userSlot))
                 if (action.type === "inspect")
-                    buttons = ["l", "f"];
+                    buttons = !data.triTeam ? ["l", "f"] : ["l", "f", "c"];
                 else if (action.type === "inspect-deck")
                     buttons = ["FFF", "FFL", "FLF", "LFF", "FLL", "LFL", "LLF", "LLL"];
                 else if (action.type === "enact")
                     if (action.pres === data.userSlot)
-                        buttons = {
-                            F: ["FFF", "FFL", "FLL>FL"].concat(isEdit ? ["FFL>FF"] : []),
-                            L: ["FFL", "FLL>FL", "FLL>LL", "LLL"]
-                        }[action.claims[0][3]];
+                        buttons = (!data.triTeam
+                            ? {
+                                F: ["FFF", "FFL", "FLL>FL"].concat(isEdit ? ["FFL>FF"] : []),
+                                L: ["FFL", "FLL>FL", "FLL>LL", "LLL"]
+                            }
+                            : {
+                                F: ["FFF", "FFL", "FFC>FC", "FFC>FF", "FLL>FL", "FCC>FC", "FCL>FL"].concat(isEdit ? ["FFL>FF", "FCL>FC"] : []),
+                                L: ["FFL", "CCL", "FLL>FL", "FLL>LL", "CLL>CL", "CLL>LL", "FCL>FL", "FCL>CL", "LLL"],
+                                C: ["CCC", "CCL", "FFC", "FCC>FC", "FCC>CC", "FCL>CL", "CLL>CL"].concat(isEdit ? ["CCL>CC", "FCL>FC"] : [])
+                            })[action.claims[0][3]];
                     else if (action.can === data.userSlot)
-                        buttons = {
-                            F: ["FF", "FL"],
-                            L: ["FL", "LL"]
-                        }[action.claims[0][3]];
+                        buttons = (!data.triTeam
+                                ? {
+                                    F: ["FF", "FL"],
+                                    L: ["FL", "LL"]
+                                }
+                                : {
+                                    F: ["FF", "FL", "FC"],
+                                    L: ["FL", "CL", "LL"],
+                                    C: ["FC", "CL", "CC"],
+                                }
+                        )[action.claims[0][3]];
             return <div className="note-buttons">
                 <div
                     className="note-buttons-title">{buttons.length ? (isEdit ? "Edit:" : "Claim:") : ""}</div>
@@ -467,6 +495,8 @@ class Game extends React.Component {
             this.processEffects(this.state, state);
             if (this.state.phase === "select-can" && state.phase === "voting")
                 this.votesTiltUpdate();
+            if (this.state.triTeam !== state.triTeam)
+                this.calcSlotCoords(state.triTeam);
             this.setState(Object.assign(state, {
                 userId: this.userId,
                 userSlot: ~state.playerSlots.indexOf(this.userId)
@@ -507,24 +537,22 @@ class Game extends React.Component {
         this.socket.on("message", text => {
             popup.alert({content: text});
         });
-        this.plateSetSound = new Audio("/secret-hitler/plate-set.wav");
+        this.plateSetSound = new Audio("/secret-hitler/media/plate-set.wav");
         this.plateSetSound.volume = 0.3;
-        this.shotSound = new Audio("/secret-hitler/shot.wav");
-        this.dealSound = new Audio("/secret-hitler/deal.mp3");
+        this.dealSound = new Audio("/secret-hitler/media/deal.mp3");
         this.dealSound.volume = 0.3;
-        this.tapSound = new Audio("/secret-hitler/tap.mp3");
+        this.tapSound = new Audio("/secret-hitler/media/tap.mp3");
         this.tapSound.volume = 0.3;
-        this.tapSoundL = new Audio("/secret-hitler/tap_l.ogg");
-        this.tapSoundR = new Audio("/secret-hitler/tap_r.ogg");
-        this.timerSound = new Audio("/secret-hitler/tick.mp3");
+        this.tapSoundL = new Audio("/secret-hitler/media/tap_l.ogg");
+        this.tapSoundR = new Audio("/secret-hitler/media/tap_r.ogg");
+        this.timerSound = new Audio("/secret-hitler/media/tick.mp3");
         this.timerSound.volume = 0.4;
         this.votesTiltUpdate();
-        this.calcSlotCoords();
     }
 
-    calcSlotCoords() {
+    calcSlotCoords(triTeam) {
         this.tableW = 691;
-        this.tableH = 397;
+        this.tableH = !triTeam ? 397 : 465;
         this.slotMap = [
             [0, 1], [1, 0], [2, 0], [3, 0], [4, 1],
             [4, 2], [3, 3], [2, 3], [1, 3], [0, 2]
@@ -648,7 +676,7 @@ class Game extends React.Component {
     }
 
     handleClickStart() {
-        if (this.state.phase === "idle" || this.state.libWin !== null || confirm("Game will be aborted. Are you sure?"))
+        if (this.state.phase === "idle" || this.state.partyWin !== null || confirm("Game will be aborted. Are you sure?"))
             this.socket.emit("start-game");
     }
 
@@ -680,6 +708,15 @@ class Game extends React.Component {
 
     handleClickSetAvatar() {
         document.getElementById("avatar-input").click();
+    }
+
+    handleSetTriTeam(state) {
+        if (this.state.triTeam !== state
+            && (this.state.phase === "idle" || !this.isNotEnoughPlayers(state))
+            && (this.state.phase === "idle"
+                || this.state.partyWin !== null
+                || confirm("Game will be aborted. Are you sure?")))
+            this.socket.emit("tri-team-set", state);
     }
 
     handleSetAvatar(event) {
@@ -810,14 +847,21 @@ class Game extends React.Component {
         return !!parseInt(localStorage.muteSounds);
     }
 
+    isNotEnoughPlayers(triTeam) {
+        return this.state.playerSlots
+            .filter((slot) => slot !== null).length < (!triTeam ? 5 : 9);
+    }
+
     getStatus() {
         const
             data = this.state,
-            notEnoughPlayers = data.phase === "idle" && data.playerSlots.filter((slot) => slot !== null).length < 5;
+            notEnoughPlayers = this.state.phase === "idle" && this.isNotEnoughPlayers(this.state.triTeam);
         let status;
         if (data.inited) {
             const
-                prevResult = data.libWin === null ? "" : (!data.libWin ? "Fascists win! " : "Liberals win! ");
+                prevResult = data.partyWin === null
+                    ? ""
+                    : `${{f: "Fascists", l: "Liberals", c: "Communists"}[data.partyWin]} win! `;
             if (notEnoughPlayers)
                 status = `${prevResult}Not enough players`;
             else if (data.phase === "idle")
@@ -895,7 +939,7 @@ class Game extends React.Component {
                     slotsCount = data.playerSlots.filter((slot) => slot !== null).length,
                     notEnoughPlayers = data.phase === "idle" && slotsCount < 5,
                     playerVote = data.players[data.userSlot] && data.players[data.userSlot].vote,
-                    playerCount = (data.libWin == null && data.phase === "idle") ? slotsCount : data.activeSlots.length,
+                    playerCount = (data.partyWin == null && data.phase === "idle") ? slotsCount : data.activeSlots.length,
                     gameType = playerCount < 7 ? "small" : (playerCount < 9 ? "medium" : "large"),
                     actionsOrderF = {
                         small: ["", "", "inspect-deck", "shooting", "shooting-veto", ""],
@@ -907,12 +951,13 @@ class Game extends React.Component {
                         medium: ["", "", "", "", ""],
                         large: ["", "", "", "", ""]
                     }[gameType],
+                    actionsOrderC = ["inspect", "election", "shooting-veto", ""],
                     actions = ["", "inspect-deck", "inspect", "election", "shooting", "shooting-veto"],
                     welcomeMessage = <div className="welcome-message">
-                        {data.phase === "idle" && data.libWin === null
-                            ? (slotsCount >= 5
+                        {data.phase === "idle" && data.partyWin === null
+                            ? (!this.isNotEnoughPlayers(data.triTeam)
                                 ? `${isHost ? "You" : "Host"} can start ${slotsCount} player game`
-                                : "At least 5 players needed")
+                                : `At least ${!data.triTeam ? 5 : 9} players needed`)
                             : <span>{data.activeSlots.length} player game started</span>}
                     </div>,
                     arrowList = [];
@@ -920,14 +965,14 @@ class Game extends React.Component {
                     const lastClaim = it.claims && it.claims[it.claims.length - 1];
                     if (it.type === "enact" && !~lastClaim.indexOf("??") && lastClaim[1] !== lastClaim[2])
                         arrowList.push({
-                            type: "fasc",
+                            type: {F: "fasc", C: "com", L: "lib"}[lastClaim[3]],
                             aSlot: it.pres,
                             bSlot: it.can,
                             index
                         });
                     else if (it.type === "inspect" && lastClaim !== "?")
                         arrowList.push({
-                            type: {l: "lib", f: "fasc"}[lastClaim],
+                            type: {l: "lib", f: "fasc", c: "com"}[lastClaim],
                             aSlot: it.pres,
                             bSlot: it.slot,
                             directed: true,
@@ -965,8 +1010,10 @@ class Game extends React.Component {
                          onMouseUp={() => this.zoomedRelease()}>
                         <div className={cs("game-board", {
                             active: this.state.inited,
-                            "lib-win": this.state.libWin,
-                            "fasc-win": this.state.libWin === false
+                            "lib-win": this.state.partyWin === "l",
+                            "fasc-win": this.state.partyWin === "f",
+                            "com-win": this.state.partyWin === "c",
+                            "tri-team": this.state.triTeam
                         })}>
                             {data.timed ? (<div className="watch">
                                 <div className="watch-hand" id="watch-hand"/>
@@ -994,6 +1041,11 @@ class Game extends React.Component {
                                                         viewBox="0 0 27 20">
                                                     <path d="M0,0 L0,8 L8,4 z" className="color-fasc"/>
                                                 </marker>
+                                                <marker id="markerArrow-com" orient="auto-start-reverse"
+                                                        markerWidth="10" markerHeight="10" refX="7" refY="4"
+                                                        viewBox="0 0 27 20">
+                                                    <path d="M0,0 L0,8 L8,4 z" className="color-com"/>
+                                                </marker>
                                             </defs>
                                             {arrowList.map((it) => (
                                                 <path
@@ -1002,7 +1054,9 @@ class Game extends React.Component {
                                                     markerStart={it.directed ? "" : `url(#markerArrow-${it.type})`}
                                                     markerEnd={`url(#markerArrow-${it.type})`}
                                                     onClick={() => this.toggleWhiteBoardExpanded(it.index)}
-                                                    className={cs("arrow", `color-${it.type}`)}/>
+                                                    className={cs("arrow", `color-${it.type}`, {
+                                                        libConf: it.type === "lib" && !it.directed
+                                                    })}/>
                                             ))}
                                         </svg>
                                         <div className="game-track-section">
@@ -1011,6 +1065,15 @@ class Game extends React.Component {
                                                 <div className="policy-card"/>
                                             </div>
                                             <div className="game-track">
+                                                {data.triTeam ? (<div className="com-track">
+                                                    {[0, 1, 2, 3].map((it) => (
+                                                        <div
+                                                            className={cs("policy-slot", `slot-${it}`)}
+                                                            style={{"background-position-x": actions.indexOf(actionsOrderC[it]) * -38.5}}>
+                                                            {(data.comTrack >= it + 1) ? (
+                                                                <div className="policy-card c"/>) : ""}
+                                                        </div>))}
+                                                </div>) : ""}
                                                 <div className="fasc-track">
                                                     {[0, 1, 2, 3, 4, 5].map((it) => (
                                                         <div
@@ -1107,9 +1170,14 @@ class Game extends React.Component {
                                     {welcomeMessage}
                                     {data.whiteBoard.map((it, ind) =>
                                         (<NoteItem item={it} data={data} game={this} index={ind}/>))}
-                                    {data.libWin !== null ? (
-                                        <div><span className={`color-${data.libWin ? "lib" : "fasc"}`}>
-                                            {data.libWin ? "Liberals" : "Fascists"}</span> wins!
+                                    {data.partyWin !== null ? (
+                                        <div><span
+                                            className={`color-${{l: "lib", f: "fasc", c: "com"}[data.partyWin]}`}>
+                                            ${{
+                                            f: "Fascists",
+                                            l: "Liberals",
+                                            c: "Communists"
+                                        }[data.partyWin]}</span> wins!
                                         </div>) : ""}
                                 </div>
                                 <div className="notes-footer">
@@ -1136,31 +1204,49 @@ class Game extends React.Component {
                                             game={this}/>
                             </div>
                             <div className="host-controls" onTouchStart={(e) => e.target.focus()}>
-                                {data.timed ? (<div className="host-controls-menu">
-                                    <div className="little-controls">
-                                        <div className="game-settings little-controls">
-                                            <div className="set-time"><i className="material-icons"
-                                                                         title="Time to enact policy and inspect">alarm
-                                                filter_1</i>
-                                                {(isHost && data.paused) ? (<input type="number"
-                                                                                   value={this.state.smallActionTime}
-                                                                                   min="1"
-                                                                                   onChange={evt => !isNaN(evt.target.valueAsNumber)
-                                                                                       && this.handleChangeTime(evt.target.valueAsNumber, "smallAction")}
-                                                />) : (<span className="value">{this.state.smallActionTime}</span>)}
-                                                <i className="material-icons"
-                                                   title="Time to all other actions besides 1">filter_2</i>
-                                                {(isHost && data.paused) ? (<input type="number"
-                                                                                   value={this.state.actionTime}
-                                                                                   min="1"
-                                                                                   onChange={evt => !isNaN(evt.target.valueAsNumber)
-                                                                                       && this.handleChangeTime(evt.target.valueAsNumber, "action")}
-                                                />) : (<span className="value">{this.state.actionTime}</span>)}
+                                <div className="host-controls-menu">
+                                    {data.timed ? (<div className="little-controls">
+                                            <div className="game-settings">
+                                                <div className="set-time"><i className="material-icons"
+                                                                             title="Time to enact policy and inspect">alarm
+                                                    filter_1</i>
+                                                    {(isHost && data.paused) ? (<input type="number"
+                                                                                       value={this.state.smallActionTime}
+                                                                                       min="1"
+                                                                                       onChange={evt => !isNaN(evt.target.valueAsNumber)
+                                                                                           && this.handleChangeTime(evt.target.valueAsNumber, "smallAction")}
+                                                    />) : (<span className="value">{this.state.smallActionTime}</span>)}
+                                                    <i className="material-icons"
+                                                       title="Time to all other actions besides 1">filter_2</i>
+                                                    {(isHost && data.paused) ? (<input type="number"
+                                                                                       value={this.state.actionTime}
+                                                                                       min="1"
+                                                                                       onChange={evt => !isNaN(evt.target.valueAsNumber)
+                                                                                           && this.handleChangeTime(evt.target.valueAsNumber, "action")}
+                                                    />) : (<span className="value">{this.state.actionTime}</span>)}
+                                                </div>
                                             </div>
                                         </div>
+                                    ) : ""}
+                                    <div className="little-controls start-game-buttons">
+                                        <div
+                                            className={cs({
+                                                "settings-button": isHost,
+                                                "level-selected": !this.state.triTeam
+                                            })}
+                                            onClick={() => this.handleSetTriTeam(false)}>
+                                            Normal
+                                        </div>
+                                        <div
+                                            className={cs({
+                                                "settings-button": isHost,
+                                                "level-selected": this.state.triTeam
+                                            })}
+                                            onClick={() => this.handleSetTriTeam(true)}>
+                                            3 teams
+                                        </div>
                                     </div>
-                                </div>) : ""}
-
+                                </div>
                                 <div className="side-buttons">
                                     <i onClick={() => window.location = parentDir}
                                        className="material-icons exit settings-button">exit_to_app</i>
@@ -1176,7 +1262,7 @@ class Game extends React.Component {
                                               className="material-icons start-game settings-button">lock_outline</i>)
                                         : (<i onClick={() => this.handleToggleTeamLockClick()}
                                               className="material-icons start-game settings-button">lock_open</i>)) : ""}
-                                    {isHost ? ((data.phase === "idle" && data.libWin == null)
+                                    {isHost ? ((data.phase === "idle" && data.partyWin == null)
                                         ? (<i onClick={() => this.handleClickStart()}
                                               title={notEnoughPlayers ? "Not enough players" : ""}
                                               className={cs("material-icons", "start-game", "settings-button", {inactive: notEnoughPlayers})}>
