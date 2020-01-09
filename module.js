@@ -225,12 +225,11 @@ function init(wsServer, path) {
                         if (playersCount > 6) {
                             addRole("f");
                             if (playersCount > 8) {
-                                addRole("f");
                                 if (room.triTeam) {
                                     addRole("c");
                                     if (playersCount === 10)
                                         addRole("c");
-                                }
+                                } else addRole("f");
                             }
                         }
                         room.currentPres = getRandomPlayer([]);
