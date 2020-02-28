@@ -1173,7 +1173,7 @@ class Game extends React.Component {
                                     {data.partyWin !== null ? (
                                         <div><span
                                             className={`color-${{l: "lib", f: "fasc", c: "com"}[data.partyWin]}`}>
-                                            ${{
+                                            {{
                                             f: "Fascists",
                                             l: "Liberals",
                                             c: "Communists"
