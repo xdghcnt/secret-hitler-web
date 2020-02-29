@@ -274,7 +274,7 @@ function init(wsServer, path) {
                     });
                 },
                 getNextPresSlot = () => {
-                    let slot = room.specialElection ? room.prevPres : room.currentPres;
+                    let slot = room.specialElection ? room.preSpecialElectionPres : room.currentPres;
                     slot++;
                     while (!players[slot] || room.playersShot.has(slot)) {
                         if (slot === 10)
@@ -578,6 +578,7 @@ function init(wsServer, path) {
                 "set-pres": (slot, presSlot) => {
                     if (room.presAction === "election" && room.currentPres === slot && players[presSlot] && slot !== presSlot) {
                         room.prevPres = room.currentPres;
+                        room.preSpecialElectionPres = room.currentPres;
                         room.currentPres = presSlot;
                         room.prevCan = room.currentCan;
                         room.currentCan = null;
