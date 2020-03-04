@@ -199,7 +199,8 @@ function init(wsServer, path) {
                         if (room.partyWin !== null && room.shufflePlayers)
                             shufflePlayers();
                         room.partyWin = null;
-                        room.teamsLocked = true;
+                        if (!testMode)
+                            room.teamsLocked = true;
                         room.playerSlots.forEach((player, slot) => {
                             if (player != null) {
                                 room.activeSlots.add(slot);
@@ -607,7 +608,9 @@ function init(wsServer, path) {
                     if (room.phase === "can-draw" && room.currentPres === slot && room.vetoRequest) {
                         if (accept) {
                             state.discardDeck.push(...players[room.currentCan].cards.splice(0));
-                            room.whiteBoard[room.whiteBoard.length - 1].type = "veto";
+                            const lastClaim = room.whiteBoard[room.whiteBoard.length - 1];
+                            lastClaim.type = "veto";
+                            lastClaim.claims = [!room.triTeam ? ["FFF", "FF", "FF"] : ["???", "??", "??"]];
                             sendStateSlot(room.currentPres);
                             processReshuffle();
                             incrSkipTrack();
@@ -616,24 +619,25 @@ function init(wsServer, path) {
                         } else
                             room.vetoRequest = false;
                         update();
+                        updateState();
                     }
                 },
                 "claim": (slot, index, claim) => {
                     const action = room.whiteBoard[index];
                     if (action
                         && (action.pres === slot || action.can === slot)
-                        && (action.type === "enact"
+                        && (action.type === "enact" || action.type === "veto"
                             || (action.type === "inspect" && ["f", "l", "c"].includes(claim))
                             || (action.type === "inspect-deck"
                                 && /[FLC]{3}/.match(claim))
                         )
                         && !room.playersShot.has(slot)) {
                         let lastClaim = action.claims[action.claims.length - 1];
-                        if (action.type !== "enact" && lastClaim !== claim) {
+                        if (action.type !== "enact" && action.type !== "veto" && lastClaim !== claim) {
                             if (action.claims.length > 1)
                                 action.reclaimed = true;
                             action.claims.push(claim);
-                        } else if (action.type === "enact") {
+                        } else if (action.type === "enact" || action.type === "veto") {
                             const
                                 newClaim = lastClaim.slice(),
                                 reclaim = (action.presClaimed && action.pres === slot)

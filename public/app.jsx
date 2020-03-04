@@ -195,8 +195,10 @@ class PlayerSlot extends React.Component {
                                         onClick={() => game.handleShot(slot)}><i
                                     className="material-icons">my_location</i></div>)
                                 : ""}
-                            {data.vetoRequest && data.currentCan === slot ? <div className="veto-bubble">Veto?</div> : ""}
-                            {data.vetoRequest === false && data.currentPres === slot ? <div className="veto-bubble">Veto denied</div> : ""}
+                            {data.vetoRequest && data.currentCan === slot ?
+                                <div className="veto-bubble">Veto?</div> : ""}
+                            {data.vetoRequest === false && data.currentPres === slot ?
+                                <div className="veto-bubble">Veto denied</div> : ""}
                         </div>
                         {~data.playersShot.indexOf(slot)
                             ? (<div className="shot-mark"
@@ -274,7 +276,7 @@ class NoteItem extends React.Component {
                 space = <span className="log-space"/>,
                 lastLine = item.claims && item.claims[item.claims.length - 1],
                 prevLines = item.claims && item.claims.slice(1, item.claims.length - 1),
-                getEnactLine = (lineOrig, last) => {
+                getEnactLine = (lineOrig, last, isVeto) => {
                     const line = lineOrig && lineOrig.slice();
                     if (line && (line[1] === line[2] || line[1] === "??" || line[2] === "??"))
                         line.splice(1, 1);
@@ -284,12 +286,15 @@ class NoteItem extends React.Component {
                             {slotNames[item.pres]}
                             </span>{arrow}
                         <span className={`color-slot-${item.can}`}>{slotNames[item.can]}</span>{colon}
-                        {item.type === "enact"
-                            ? line.map((cards, ind) => [ind ? arrow : "", cards.split("").map((card) => cardTypes[card])])
+                        {["enact", "veto"].includes(item.type)
+                            ? line.map((cards, ind) => [ind ? arrow : "", cards.split("").map((card) => cardTypes[card])]).concat(
+                                [isVeto ? [arrow, "Veto"] : ""]
+                            )
                             : <span className="color-down">Downvoted</span>}
                         {last && item.vetoDenied === true ? (<span>{space}(Veto denied)</span>) : ""}
                     </div>;
                 },
+                getVetoLine = (lineOrig, last) => getEnactLine(lineOrig, last, true),
                 getInspectLine = (line) => {
                     return <div className="inspect-line">
                     <span
@@ -318,6 +323,8 @@ class NoteItem extends React.Component {
                 noteExpanded = "";
             if (item.type === "enact")
                 note = getEnactLine(lastLine.slice(), true);
+            if (item.type === "veto")
+                note = getVetoLine(lastLine.slice(), true);
             else if (item.type === "skip")
                 note = getEnactLine();
             else if (item.type === "topdeck")
@@ -338,10 +345,10 @@ class NoteItem extends React.Component {
                         className={`color-slot-${item.pres}`}>{slotNames[item.pres]}</span>{space}gives{space}pres{space}to{space}
                     <span className={`color-slot-${item.slot}`}>{slotNames[item.slot]}</span>
                 </span>;
-            else if (item.type === "veto" || item.type === "pre-enact")
+            else if (item.type === "pre-enact")
                 note = <span><span className={`color-slot-${item.pres}`}>{slotNames[item.pres]}</span>{arrow}
                     <span className={`color-slot-${item.can}`}>
-                        {slotNames[item.can]}</span>{colon}{item.type === "veto" ? "Veto!" : "Elected"}
+                        {slotNames[item.can]}</span>{colon}{"Elected"}
                     </span>;
             else if (item.type === "inspect-deck")
                 note = getInspectDeckLine(lastLine);
@@ -355,7 +362,8 @@ class NoteItem extends React.Component {
                     noteExpanded = <div className="note-expanded">
                         {getVotesLine(item.votes.ja, item.votes.nein, "Ja")}
                         {getVotesLine(item.votes.nein, item.votes.ja, "Nein")}
-                        {item.type === "enact" ? prevLines.map(getEnactLine) : ""}
+                        {item.type === "enact" ? prevLines.map((line, index, arr) => getEnactLine(line, index === arr[index - 1])) : ""}
+                        {item.type === "veto" ? prevLines.map((line, index, arr) => getVetoLine(line, index === arr[index - 1])) : ""}
                     </div>;
                 else if (item.type === "inspect")
                     noteExpanded = <div className="note-expanded">
@@ -416,11 +424,11 @@ class NoteButtons extends React.Component {
             } else
                 data.whiteBoard.forEach((it, index) => {
                     if (it.claims
-                        && (it.claims.length === 1 || it.type === "enact")
-                        && ((data.userSlot === it.pres && it.type !== "enact")
-                            || ((data.userSlot === it.pres && !it.presClaimed)
+                        && (it.claims.length === 1 || (it.type === "enact" || it.type === "veto"))
+                        && ((data.userSlot === it.pres && (it.type !== "enact" && it.type !== "veto"))
+                            || ((data.userSlot === it.pres && !it.presClaimed && (it.type !== "veto" || data.triTeam))
                                 || (data.userSlot === it.can && !it.canClaimed
-                                    && it.claims[it.claims.length - 1][3] !== "F")))) {
+                                    && (data.triTeam || (it.type !== "veto" ? it.claims[it.claims.length - 1][3] !== "F" : false)))))) {
                         action = it;
                         actionIndex = index;
                     }
@@ -430,7 +438,7 @@ class NoteButtons extends React.Component {
                     buttons = !data.triTeam ? ["l", "f"] : ["l", "f", "c"];
                 else if (action.type === "inspect-deck")
                     buttons = ["FFF", "FFL", "FLF", "LFF", "FLL", "LFL", "LLF", "LLL"];
-                else if (action.type === "enact")
+                else if (action.type === "enact") {
                     if (action.pres === data.userSlot)
                         buttons = (!data.triTeam
                             ? {
@@ -454,6 +462,17 @@ class NoteButtons extends React.Component {
                                     C: ["FC", "CL", "CC"],
                                 }
                         )[action.claims[0][3]];
+                } else if (action.type === "veto")
+                    if (action.pres === data.userSlot)
+                        buttons = !data.triTeam
+                            ? ["FFF", "FFL>FF", "FLL>FF", "FFL>FL", "FLL>FL", "FLL>LL", "LLL"]
+                            : ["FFF", "FFC>FF", "FFC>FC", "FCC>FC", "FCC>CC", "CCC"].concat(isEdit
+                                ? ["FLL>FL", "FFL>FL", "FFL>FF", "FCL>FL", "FCL>FC", "FCL>CL", "CCL>CC", "CCL>CL", "CLL>CL", "CLL>LL", "LLL"]
+                                : []);
+                    else if (action.can === data.userSlot)
+                        buttons = !data.triTeam
+                            ? ["FF", "FL", "LL"]
+                            : ["FF", "FC", "CC", "CL", "FL", "LL"];
             return <div className="note-buttons">
                 <div
                     className="note-buttons-title">{buttons.length ? (isEdit ? "Edit:" : "Claim:") : ""}</div>
@@ -963,9 +982,9 @@ class Game extends React.Component {
                     arrowList = [];
                 data.whiteBoard.forEach((it, index) => {
                     const lastClaim = it.claims && it.claims[it.claims.length - 1];
-                    if (it.type === "enact" && !~lastClaim.indexOf("??") && lastClaim[1] !== lastClaim[2])
+                    if ((it.type === "enact" || it.type === "veto") && !~lastClaim.indexOf("??") && lastClaim[1] !== lastClaim[2])
                         arrowList.push({
-                            type: {F: "fasc", C: "com", L: "lib"}[lastClaim[3]],
+                            type: {F: "fasc", C: "com", L: "lib", N: "neutral"}[(it.type === "veto") ? "N" : lastClaim[3]],
                             aSlot: it.pres,
                             bSlot: it.can,
                             index
@@ -1045,6 +1064,11 @@ class Game extends React.Component {
                                                         markerWidth="10" markerHeight="10" refX="7" refY="4"
                                                         viewBox="0 0 27 20">
                                                     <path d="M0,0 L0,8 L8,4 z" className="color-com"/>
+                                                </marker>
+                                                <marker id="markerArrow-neutral" orient="auto-start-reverse"
+                                                        markerWidth="10" markerHeight="10" refX="7" refY="4"
+                                                        viewBox="0 0 27 20">
+                                                    <path d="M0,0 L0,8 L8,4 z" className="color-neutral"/>
                                                 </marker>
                                             </defs>
                                             {arrowList.map((it) => (
@@ -1174,10 +1198,10 @@ class Game extends React.Component {
                                         <div><span
                                             className={`color-${{l: "lib", f: "fasc", c: "com"}[data.partyWin]}`}>
                                             {{
-                                            f: "Fascists",
-                                            l: "Liberals",
-                                            c: "Communists"
-                                        }[data.partyWin]}</span> wins!
+                                                f: "Fascists",
+                                                l: "Liberals",
+                                                c: "Communists"
+                                            }[data.partyWin]}</span> wins!
                                         </div>) : ""}
                                 </div>
                                 <div className="notes-footer">

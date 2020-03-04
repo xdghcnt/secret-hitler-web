@@ -833,6 +833,12 @@ body {
     fill: #f4a954;
 }
 
+.color-neutral {
+    color: white;
+    stroke: white;
+    fill: white;
+}
+
 .color-unknown {
     color: gray;
 }
