@@ -147,6 +147,9 @@ class PlayerSlot extends React.Component {
                 lastCard = lastAction && lastAction.type !== "reshuffle"
                     ? lastAction.card
                     : data.whiteBoard[data.whiteBoard.length - 2].card;
+            let roleCardIndex = roles.indexOf(role);
+            if (roleCardIndex === -1)
+                roleCardIndex = roles.indexOf("l1");
             return (
                 <div
                     className={cs("player-slot", `player-slot-${slot}`, {
@@ -170,7 +173,7 @@ class PlayerSlot extends React.Component {
                             {role !== "unknown"
                                 ? (<div className="player-role"
                                         onMouseDown={(evt) => game.playerRoleHold(evt.target)}
-                                        style={{"background-position-x": roles.indexOf(role) * -46}}/>) : ""}
+                                        style={{"background-position-x": roleCardIndex * -46}}/>) : ""}
                             {~data.playersNotHitler.indexOf(slot)
                                 ? (<div className="not-hitler-card"/>) : ""}
                             {data.phase === "pres-action" && data.currentPres === slot

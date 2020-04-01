@@ -37,6 +37,7 @@ function init(wsServer, path) {
         constructor(hostId, hostData, userRegistry) {
             super();
             const
+                prekMode = hostData.roomId.includes("prekol"),
                 getResetParams = () => ({
                     libTrack: 0,
                     fascTrack: 0,
@@ -57,8 +58,8 @@ function init(wsServer, path) {
                     vetoActive: false,
                     vetoRequest: null,
                     specialElection: false,
-                    fCount: 11,
-                    lCount: 6,
+                    fCount: !prekMode ? 11 : 17,
+                    lCount: !prekMode ? 6 : 0,
                     cCount: 6,
                     paused: false,
                     time: null,
@@ -70,6 +71,7 @@ function init(wsServer, path) {
                     discardDeck: []
                 },
                 room = {
+                    roomId: hostData.roomId,
                     inited: true,
                     hostId: hostId,
                     spectators: new JSONSet(),
@@ -220,17 +222,18 @@ function init(wsServer, path) {
                                 players[player].role = role;
                                 activeRoles.push(player);
                             };
-                        let player = getRandomPlayer(activeRoles);
-                        addRole("h");
-                        addRole("f");
-                        if (playersCount > 6) {
+                        if (!prekMode){
+                            addRole("h");
                             addRole("f");
-                            if (playersCount > 8) {
-                                if (room.triTeam) {
-                                    addRole("c");
-                                    if (playersCount === 10)
+                            if (playersCount > 6) {
+                                addRole("f");
+                                if (playersCount > 8) {
+                                    if (room.triTeam) {
                                         addRole("c");
-                                } else addRole("f");
+                                        if (playersCount === 10)
+                                            addRole("c");
+                                    } else addRole("f");
+                                }
                             }
                         }
                         room.currentPres = getRandomPlayer([]);
@@ -629,7 +632,7 @@ function init(wsServer, path) {
                         && (action.type === "enact" || action.type === "veto"
                             || (action.type === "inspect" && ["f", "l", "c"].includes(claim))
                             || (action.type === "inspect-deck"
-                                && /[FLC]{3}/.match(claim))
+                                && (claim && claim.match && claim.match(/[FLC]{3}/)))
                         )
                         && !room.playersShot.has(slot)) {
                         let lastClaim = action.claims[action.claims.length - 1];
