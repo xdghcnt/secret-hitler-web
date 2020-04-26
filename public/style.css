@@ -343,6 +343,7 @@ body {
     z-index: 2;
     padding: 6px;
     user-select: none;
+    display: none;
 }
 
 .help-panel:hover, .help-panel:focus {
