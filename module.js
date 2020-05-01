@@ -1,41 +1,21 @@
 function init(wsServer, path) {
     const
         fs = require("fs"),
-        EventEmitter = require("events"),
         express = require("express"),
-        exec = require("child_process").exec,
         app = wsServer.app,
         registry = wsServer.users,
         channel = "secret-hitler",
         testMode = process.argv[2] === "debug";
 
-    app.post("/secret-hitler/upload-avatar", function (req, res) {
-        registry.log(`secret-hitler - ${req.body.userId} - upload-avatar`);
-        if (req.files && req.files.avatar && registry.checkUserToken(req.body.userId, req.body.userToken)) {
-            const userDir = `${registry.config.appDir || __dirname}/public/avatars/${req.body.userId}`;
-            exec(`rm -r ${userDir}`, () => {
-                fs.mkdir(userDir, () => {
-                    req.files.avatar.mv(`${userDir}/${req.files.avatar.md5}.png`, function (err) {
-                        if (err) {
-                            log(`fileUpload mv error ${err}`);
-                            return res.status(500).send("FAIL");
-                        }
-                        res.send(req.files.avatar.md5);
-                    });
-                })
-
-            });
-        } else res.status(500).send("Wrong data");
-    });
     app.use("/secret-hitler", express.static(`${__dirname}/public`));
     if (registry.config.appDir)
         app.use("/secret-hitler", express.static(`${registry.config.appDir}/public`));
 
     registry.handleAppPage(path, `${__dirname}/public/app.html`);
 
-    class GameState extends EventEmitter {
+    class GameState extends wsServer.users.RoomState {
         constructor(hostId, hostData, userRegistry) {
-            super();
+            super(hostId, hostData, userRegistry);
             const
                 prekMode = hostData.roomId.includes("prekol"),
                 getResetParams = () => ({
@@ -63,7 +43,8 @@ function init(wsServer, path) {
                     cCount: 6,
                     paused: false,
                     time: null,
-                    timeTotal: null
+                    timeTotal: null,
+                    videoMode: false
                 }),
                 state = {
                     players: {},
@@ -222,7 +203,7 @@ function init(wsServer, path) {
                                 players[player].role = role;
                                 activeRoles.push(player);
                             };
-                        if (!prekMode){
+                        if (!prekMode) {
                             addRole("h");
                             addRole("f");
                             if (playersCount > 6) {
@@ -706,6 +687,11 @@ function init(wsServer, path) {
                 "toggle-lock": (user) => {
                     if (user === room.hostId)
                         room.teamsLocked = !room.teamsLocked;
+                    update();
+                },
+                "toggle-video-mode": (user) => {
+                    if (user === room.hostId)
+                        room.videoMode = !room.videoMode;
                     update();
                 },
                 "toggle-paused": (user) => {

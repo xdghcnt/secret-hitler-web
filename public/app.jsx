@@ -89,6 +89,52 @@ class Spectators extends React.Component {
     }
 }
 
+class UserVideo extends React.Component {
+    render() {
+        return <video
+            ref='videoElem'
+            autoPlay
+            muted
+            controls={false}
+            className="user-video"
+        />
+    }
+
+    componentDidMount() {
+        this._processState();
+    }
+
+    componentDidUpdate() {
+        this._processState();
+    }
+
+    _processState() {
+        const {videoElem} = this.refs;
+        const {videoTrack, paused} = this.props;
+        this._setTrack(videoTrack);
+        if (videoElem.paused !== paused) {
+            if (paused)
+                videoElem.pause();
+            else
+                videoElem.play();
+        }
+    }
+
+    _setTrack(videoTrack) {
+        if (this._videoTrack === videoTrack)
+            return;
+        this._videoTrack = videoTrack;
+        const {videoElem} = this.refs;
+        const stream = new MediaStream;
+
+        stream.addTrack(videoTrack);
+        videoElem.srcObject = stream;
+        videoElem.play()
+            .catch((error) => console.warn('videoElem.play() failed:%o', error));
+
+    }
+}
+
 class PlayerSlot extends React.Component {
     render() {
         try {
@@ -150,6 +196,9 @@ class PlayerSlot extends React.Component {
             let roleCardIndex = roles.indexOf(role);
             if (roleCardIndex === -1)
                 roleCardIndex = roles.indexOf("l1");
+            const
+                hasVideo = !!data.media.videoTracks[player],
+                wasShot = !!~data.playersShot.indexOf(slot);
             return (
                 <div
                     className={cs("player-slot", `player-slot-${slot}`, {
@@ -158,18 +207,20 @@ class PlayerSlot extends React.Component {
                         "current-can": data.currentCan === slot,
                         "prev-pres": data.prevPres === slot,
                         "prev-can": data.prevCan,
-                        "shot": ~data.playersShot.indexOf(slot),
+                        "shot": wasShot,
                         "unoccupied": !~data.activeSlots.indexOf(slot) && data.teamsLocked && !data.playerSlots[slot],
                         "inactive": !~data.activeSlots.indexOf(slot) && data.playerSlots[slot]
                     })}>
                     <div className="player-section">
-                        <div className={cs("avatar", {"no-player": player == null})}
+                        <div className={cs("avatar", {"no-player": player == null, "has-video": hasVideo})}
                              onTouchStart={(e) => e.target.focus()}
                              style={{
                                  "background-image": player !== null ? `url(/secret-hitler/${data.playerAvatars[player]
                                      ? `avatars/${player}/${data.playerAvatars[player]}.png`
                                      : "media/default-user.jpg"})` : ""
                              }}>
+                            {hasVideo
+                                ? (<UserVideo videoTrack={data.media.videoTracks[player]} paused={wasShot}/>) : ""}
                             {role !== "unknown"
                                 ? (<div className="player-role"
                                         onMouseDown={(evt) => game.playerRoleHold(evt.target)}
@@ -186,12 +237,21 @@ class PlayerSlot extends React.Component {
                                 ? (<div className="player-role check-button"
                                         onClick={() => game.handleClickInspect(slot)}
                                         style={{"background-position-x": roles.indexOf("check") * -46}}/>) : ""}
-                            {player === data.userId
-                                ? (<div className="set-avatar-button">
-                                    <i onClick={() => game.handleClickSetAvatar()}
-                                       className="toggle-theme material-icons">edit</i>
-                                </div>)
-                                : ""}
+                            <div className="avatar-buttons">
+                                {player === data.userId && !hasVideo
+                                    ? (<i onClick={() => game.handleClickSetAvatar()}
+                                          className="toggle-theme material-icons">edit</i>)
+                                    : ""}
+                                {player === data.userId && hasVideo
+                                    ? (<i onClick={() => game.handleChangeWebcam()}
+                                          className="toggle-theme material-icons">switch_video</i>)
+                                    : ""}
+                                {player === data.userId && data.videoMode
+                                    ? (<i onClick={() => game.handleToggleWebcamEnabled()}
+                                          className="toggle-theme material-icons">
+                                        {!parseInt(localStorage.webcamEnabled) ? "videocam" : "videocam_off"}</i>)
+                                    : ""}
+                            </div>
                             {(data.presAction === "shooting" && ~data.activeSlots.indexOf(slot)
                                 && data.userSlot === data.currentPres && data.userSlot !== slot && !~data.playersShot.indexOf(slot))
                                 ? (<div className="shot-button"
@@ -505,32 +565,59 @@ class Game extends React.Component {
         else
             history.replaceState(undefined, undefined, location.origin + location.pathname + location.hash);
         initArgs.avatarId = localStorage.avatarId;
-        initArgs.roomId = location.hash.substr(1);
+        initArgs.roomId = this.roomId = location.hash.substr(1);
         initArgs.userId = this.userId = localStorage.secretHitlerUserId;
         initArgs.token = this.userToken = localStorage.secretHitlerUserToken;
         initArgs.userName = localStorage.userName;
         initArgs.wssToken = window.wssToken;
+        localStorage.webcamEnabled = localStorage.webcamEnabled || 1;
         if (initArgs.roomId.includes("p" + "u" + "t" + "i" + "n"))
             document.documentElement.classList.add("ptn");
         this.socket = window.socket.of("secret-hitler");
+        let mediaSoupEnabled = false;
         this.socket.on("state", (state) => {
+            CommonRoom.processCommonRoom(state, this.state);
+            this.enableMediaSoup();
+            let needPublish = false;
+            if (mediaSoupEnabled && (!this.state || this.state.userSlot == null) && ~userSlot)
+                needPublish = true;
+
+            if (!mediaSoupEnabled && state.videoMode) {
+                mediaSoupEnabled = true;
+                needPublish = true;
+            } else if (mediaSoupEnabled && !state.videoMode) {
+                mediaSoupEnabled = false;
+                needPublish = false;
+                this.disableMediaSoup();
+            }
+
             this.processEffects(this.state, state);
             if (this.state.phase === "select-can" && state.phase === "voting")
                 this.votesTiltUpdate();
             if (this.state.triTeam !== state.triTeam)
                 this.calcSlotCoords(state.triTeam);
+            const userSlot = state.playerSlots.indexOf(this.userId);
+            if (mediaSoupEnabled && this.state.playerSlots && this.state.userSlot != null && !~userSlot)
+                this.unpublishUserVideo();
             this.setState(Object.assign(state, {
                 userId: this.userId,
-                userSlot: ~state.playerSlots.indexOf(this.userId)
-                    ? state.playerSlots.indexOf(this.userId)
+                userSlot: ~userSlot
+                    ? userSlot
                     : null,
                 players: this.state.players || {},
                 cardSelected: this.state.cardSelected,
                 whiteBoardExpanded: this.state.whiteBoardExpanded,
                 whiteBoardVoteHighlight: this.state.whiteBoardVoteHighlight,
                 whiteBoardHidden: this.state.whiteBoardHidden,
-                votesTilt: this.state.votesTilt
-            }));
+                votesTilt: this.state.votesTilt,
+                media: this.state.media || {
+                    videoTracks: {},
+                    audioTracks: {}
+                }
+            }), () => {
+                if (needPublish)
+                    this.publishUserVideo();
+            });
         });
         this.socket.on("player-state", (players) => {
             if (players[this.state.userSlot] && players[this.state.userSlot].cards)
@@ -570,6 +657,88 @@ class Game extends React.Component {
         this.timerSound = new Audio("/secret-hitler/media/tick.mp3");
         this.timerSound.volume = 0.4;
         this.votesTiltUpdate();
+    }
+
+    async publishUserVideo() {
+        if (parseInt(localStorage.webcamEnabled)) {
+            this.unpublishUserVideo();
+            await this.updateWebcams();
+            try {
+                const track = await navigator.mediaDevices
+                    .getUserMedia({video: {deviceId: {exact: this.currentWebcam}}})
+                    .then(stream => stream.getVideoTracks()[0]);
+                await this.mediaRoom.sendVideo(track);
+                this.state.media.videoTracks[this.state.userId] = track;
+            } catch (e) {
+                localStorage.webcamEnabled = 0;
+            }
+            this.updateState()
+        }
+    }
+
+    unpublishUserVideo() {
+        if (this.state.media && this.state.media.videoTracks[this.state.userId]) {
+            this.state.media.videoTracks[this.state.userId].stop();
+            delete this.state.media.videoTracks[this.state.userId];
+            this.updateState();
+        }
+    }
+
+    enableMediaSoup() {
+        this.mediaRoom = new window.MediaSoupRoom(
+            `wss://meme-police.com:2345/?roomId=secret-hitler-${this.roomId}&userId=${this.userId}`
+        );
+        this.mediaRoom.join();
+
+        this.mediaRoom.on("@peerClosed", ({peerId}) => {
+            delete this.state.media.videoTracks[peerId];
+            delete this.state.media.audioTracks[peerId];
+            this.updateState();
+        });
+
+        this.mediaRoom.on("@consumer", async consumer => {
+            const {
+                appData: {peerId},
+                track
+            } = consumer;
+            console.log("receive consumer", consumer);
+
+            if (track.kind === "video")
+                this.state.media.videoTracks[peerId] = track;
+            else
+                this.state.media.audioTracks[peerId] = track;
+            this.updateState();
+        });
+    }
+
+    disableMediaSoup() {
+        this.unpublishUserVideo();
+        //this.mediaRoom.peer.close();
+    }
+
+    async updateWebcams() {
+        this.webcams = [...(await navigator.mediaDevices.enumerateDevices())].filter((device) =>
+            device.kind === "videoinput").map((device) => device.deviceId);
+        if (localStorage.currentWebcam && this.webcams.includes(localStorage.currentWebcam))
+            this.currentWebcam = localStorage.currentWebcam;
+        else
+            this.currentWebcam = this.webcams[0];
+    }
+
+    async changeWebcam() {
+        await this.updateWebcams();
+        if (this.webcams.length > 1) {
+            let webcamIdx = this.webcams.indexOf(this.currentWebcam);
+            webcamIdx++;
+            if (webcamIdx >= this.webcams.length)
+                webcamIdx = 0;
+            this.currentWebcam = localStorage.currentWebcam = this.webcams[webcamIdx];
+            this.publishUserVideo();
+        }
+    }
+
+    updateState() {
+        this.setState(Object.assign({}, this.state));
     }
 
     calcSlotCoords(triTeam) {
@@ -710,6 +879,10 @@ class Game extends React.Component {
         this.socket.emit("toggle-timed");
     }
 
+    handleToggleVideoMode() {
+        this.socket.emit("toggle-video-mode");
+    }
+
     handleToggleMuteSounds() {
         localStorage.muteSounds = !parseInt(localStorage.muteSounds) ? 1 : 0;
         this.setState(Object.assign({}, this.state));
@@ -732,6 +905,18 @@ class Game extends React.Component {
         document.getElementById("avatar-input").click();
     }
 
+    handleChangeWebcam() {
+        this.changeWebcam();
+    }
+
+    handleToggleWebcamEnabled() {
+        localStorage.webcamEnabled = parseInt(localStorage.webcamEnabled) ? 0 : 1;
+        if (this.state.media.videoTracks[this.state.userId])
+            this.unpublishUserVideo();
+        else
+            this.publishUserVideo();
+    }
+
     handleSetTriTeam(state) {
         if (this.state.triTeam !== state
             && (this.state.phase === "idle" || !this.isNotEnoughPlayers(state))
@@ -746,7 +931,7 @@ class Game extends React.Component {
         if (input.files && input.files[0]) {
             const
                 file = input.files[0],
-                uri = "/secret-hitler/upload-avatar",
+                uri = "/common/upload-avatar",
                 xhr = new XMLHttpRequest(),
                 fd = new FormData(),
                 fileSize = ((file.size / 1024) / 1024).toFixed(4); // MB
@@ -987,7 +1172,12 @@ class Game extends React.Component {
                     const lastClaim = it.claims && it.claims[it.claims.length - 1];
                     if ((it.type === "enact" || it.type === "veto") && !~lastClaim.indexOf("??") && lastClaim[1] !== lastClaim[2])
                         arrowList.push({
-                            type: {F: "fasc", C: "com", L: "lib", N: "neutral"}[(it.type === "veto") ? "N" : lastClaim[3]],
+                            type: {
+                                F: "fasc",
+                                C: "com",
+                                L: "lib",
+                                N: "neutral"
+                            }[(it.type === "veto") ? "N" : lastClaim[3]],
                             aSlot: it.pres,
                             bSlot: it.can,
                             index
@@ -1035,7 +1225,8 @@ class Game extends React.Component {
                             "lib-win": this.state.partyWin === "l",
                             "fasc-win": this.state.partyWin === "f",
                             "com-win": this.state.partyWin === "c",
-                            "tri-team": this.state.triTeam
+                            "tri-team": this.state.triTeam,
+                            "video-mode": this.state.videoMode
                         })}>
                             {data.timed ? (<div className="watch">
                                 <div className="watch-hand" id="watch-hand"/>
@@ -1275,10 +1466,15 @@ class Game extends React.Component {
                                     </div>
                                 </div>
                                 <div className="side-buttons">
-                                    <i onClick={() => window.location = parentDir}
-                                       className="material-icons exit settings-button">exit_to_app</i>
+                                    <i onClick={() => this.socket.emit("set-room-mode", false)}
+                                       className="material-icons exit settings-button">home</i>
                                     <i onClick={() => this.openRules()}
                                        className="material-icons settings-button">help_outline</i>
+                                    {isHost ? (!data.videoMode
+                                        ? (<i onClick={() => this.handleToggleVideoMode()}
+                                              className="material-icons start-game settings-button">videocam</i>)
+                                        : (<i onClick={() => this.handleToggleVideoMode()}
+                                              className="material-icons start-game settings-button">videocam_off</i>)) : ""}
                                     {isHost ? (!data.timed
                                         ? (<i onClick={() => this.handleToggleTimed()}
                                               className="material-icons start-game settings-button">alarm_off</i>)
@@ -1317,8 +1513,9 @@ class Game extends React.Component {
                                 <i className="settings-hover-button material-icons">settings</i>
                                 <input id="avatar-input" type="file" onChange={evt => this.handleSetAvatar(evt)}/>
                             </div>
-                            <CommonRoom state={this.state}/>
+                            <CommonRoom state={this.state} app={this}/>
                         </div>
+                        x
                     </div>
                 );
             } else return (<div/>);

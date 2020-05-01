@@ -8,6 +8,6 @@
     "public"
   ],
   "dependencies": {
-    "ws-server-engine": "git://github.com/xdghcnt/ws-server-engine.git"
+    "node-fetch": "2.6.0"
   }
 }

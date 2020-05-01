@@ -142,7 +142,7 @@ body {
 
 .spectators {
     display: inline-block;
-    padding: 6px;
+    padding: 4px 6px;
     cursor: pointer;
     background: rgba(255, 252, 245, 0.58);
     user-select: none;
@@ -173,25 +173,26 @@ body {
     justify-content: center;
 }
 
-.avatar:hover .set-avatar-button, .avatar:focus .set-avatar-button {
-    display: block;
-}
-
-.set-avatar-button {
+.avatar-buttons {
     display: none;
-}
-
-.set-avatar-button i {
     position: absolute;
     left: 0px;
     bottom: 0px;
+}
+
+.avatar:hover .avatar-buttons, .avatar:focus .avatar-buttons {
+    display: block;
+}
+
+.avatar-buttons i {
     color: #4c4c4c;
     background: rgb(141, 141, 141);
     z-index: 2;
     padding: 1px 3px;
+    margin-right: 3px;
 }
 
-.set-avatar-button i:hover {
+.avatar-buttons i:hover {
     color: #222222;
     cursor: pointer;
 }
@@ -744,6 +745,7 @@ body {
     border-radius: 25px;
     user-select: none;
     cursor: pointer;
+    position: absolute;
 }
 
 .shot-mark {
@@ -1213,7 +1215,6 @@ body {
 }
 
 
-
 .ptn .tri-team .game-track-section {
     background: url(media/ptn/policy-track-tri.png) bottom;
     background-size: cover;
@@ -1264,6 +1265,7 @@ body {
     border-left: 0;
     margin-bottom: -11px;
 }
+
 .veto-bubble {
     z-index: 1;
     background: #adadadc2;
@@ -1271,4 +1273,52 @@ body {
     position: absolute;
     left: 94px;
     top: -13px;
+}
+
+.video-mode .main-slots {
+    width: 691px;
+}
+
+.video-mode .player-name-text {
+    max-width: none;
+}
+
+.video-mode .avatar {
+    width: 201px;
+    height: 170px;
+}
+
+.video-mode .shot-mark {
+    top: 64px;
+}
+
+.video-mode .main-slots.top .player-table-section, .video-mode .main-slots.bottom .player-table-section {
+    left: 35px;
+}
+
+.video-mode .player-slot-8 .vote-section, .video-mode .player-slot-1 .vote-section {
+    margin-left: 80px;
+}
+
+.video-mode .player-slot-3 .vote-section, .video-mode .player-slot-6 .vote-section {
+    margin-left: -80px;
+}
+
+.video-mode .player-slot-4 .player-table-section, .video-mode .player-slot-0 .player-table-section {
+    top: 72px;
+}
+
+.video-mode .player-slot-5 .player-table-section, .video-mode .player-slot-9 .player-table-section {
+    top: 38px;
+}
+
+.user-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: absolute;
+}
+
+.avatar.has-video {
+    background: none !important;
 }
