@@ -574,31 +574,26 @@ class Game extends React.Component {
         if (initArgs.roomId.includes("p" + "u" + "t" + "i" + "n"))
             document.documentElement.classList.add("ptn");
         this.socket = window.socket.of("secret-hitler");
-        let mediaSoupEnabled = false;
         this.socket.on("state", (state) => {
+            const userSlot = state.playerSlots.indexOf(this.userId);
             CommonRoom.processCommonRoom(state, this.state);
-            this.enableMediaSoup();
-            let needPublish = false;
-            if (mediaSoupEnabled && (!this.state || this.state.userSlot == null) && ~userSlot)
-                needPublish = true;
 
-            if (!mediaSoupEnabled && state.videoMode) {
-                mediaSoupEnabled = true;
-                needPublish = true;
-            } else if (mediaSoupEnabled && !state.videoMode) {
-                mediaSoupEnabled = false;
-                needPublish = false;
+            if (!this.mediaSoupEnabled && state.videoMode)
+                this.enableMediaSoup();
+            else if (this.mediaSoupEnabled && !state.videoMode)
                 this.disableMediaSoup();
-            }
+
+            if (this.mediaSoupEnabled)
+                if (!this.videoPublished && (!this.state || this.state.userSlot == null) && ~userSlot)
+                    this.needPublish = true;
+                else if (this.videoPublished && (this.state && this.state.userSlot != null) && !~userSlot)
+                    this.unpublishUserVideo();
 
             this.processEffects(this.state, state);
             if (this.state.phase === "select-can" && state.phase === "voting")
                 this.votesTiltUpdate();
             if (this.state.triTeam !== state.triTeam)
                 this.calcSlotCoords(state.triTeam);
-            const userSlot = state.playerSlots.indexOf(this.userId);
-            if (mediaSoupEnabled && this.state.playerSlots && this.state.userSlot != null && !~userSlot)
-                this.unpublishUserVideo();
             this.setState(Object.assign(state, {
                 userId: this.userId,
                 userSlot: ~userSlot
@@ -615,7 +610,7 @@ class Game extends React.Component {
                     audioTracks: {}
                 }
             }), () => {
-                if (needPublish)
+                if (this.needPublish)
                     this.publishUserVideo();
             });
         });
@@ -660,12 +655,14 @@ class Game extends React.Component {
     }
 
     async publishUserVideo() {
+        this.needPublish = false;
+        this.videoPublished = true;
         if (parseInt(localStorage.webcamEnabled)) {
             this.unpublishUserVideo();
             await this.updateWebcams();
             try {
                 const track = await navigator.mediaDevices
-                    .getUserMedia({video: {deviceId: {exact: this.currentWebcam}}})
+                    .getUserMedia({video: {deviceId: this.currentWebcam}})
                     .then(stream => stream.getVideoTracks()[0]);
                 await this.mediaRoom.sendVideo(track);
                 this.state.media.videoTracks[this.state.userId] = track;
@@ -680,11 +677,13 @@ class Game extends React.Component {
         if (this.state.media && this.state.media.videoTracks[this.state.userId]) {
             this.state.media.videoTracks[this.state.userId].stop();
             delete this.state.media.videoTracks[this.state.userId];
+            this.videoPublished = false;
             this.updateState();
         }
     }
 
     enableMediaSoup() {
+        this.mediaSoupEnabled = true;
         this.mediaRoom = new window.MediaSoupRoom(
             `wss://meme-police.com:2345/?roomId=secret-hitler-${this.roomId}&userId=${this.userId}`
         );
@@ -712,21 +711,27 @@ class Game extends React.Component {
     }
 
     disableMediaSoup() {
+        this.mediaSoupEnabled = false;
         this.unpublishUserVideo();
-        //this.mediaRoom.peer.close();
+        this.mediaRoom.peer.close();
     }
 
-    async updateWebcams() {
+    async updateWebcams(retry) {
         this.webcams = [...(await navigator.mediaDevices.enumerateDevices())].filter((device) =>
             device.kind === "videoinput").map((device) => device.deviceId);
         if (localStorage.currentWebcam && this.webcams.includes(localStorage.currentWebcam))
             this.currentWebcam = localStorage.currentWebcam;
         else
             this.currentWebcam = this.webcams[0];
+        if (!retry && !this.currentWebcam) {
+            await navigator.mediaDevices.getUserMedia({video: true})
+                .then(stream => stream.getVideoTracks()[0].stop());
+            this.updateWebcams(true);
+        }
     }
 
     async changeWebcam() {
-        await this.updateWebcams();
+        //zawait this.updateWebcams();
         if (this.webcams.length > 1) {
             let webcamIdx = this.webcams.indexOf(this.currentWebcam);
             webcamIdx++;
