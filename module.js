@@ -77,7 +77,6 @@ function init(wsServer, path) {
                 },
                 resetRoom = () => Object.assign(room, getResetParams());
             resetRoom();
-            let playerRoles = {};
             if (testMode)
                 [1, 2, 3, 4, 5, 6, 7, 8, 9].forEach((ind) => {
                     room.playerSlots[ind] = `kek${ind}`;
@@ -94,6 +93,10 @@ function init(wsServer, path) {
                     send(room.onlinePlayers, "state", room);
                 },
                 sendState = (user) => {
+                    const playerRoles = {};
+                    room.activeSlots.forEach((slot) => {
+                        playerRoles[slot] = {role: state.players[slot].role};
+                    });
                     const slot = room.playerSlots.indexOf(user);
                     if (room.phase === "idle" || room.blackSlotPlayers.has(user))
                         send(user, "player-state", state.players);
@@ -103,11 +106,11 @@ function init(wsServer, path) {
                             send(user, "player-state", Object.assign({}, playerRoles, {[slot]: state.players[slot]}));
                         else
                             send(user, "player-state",
-                                Object.assign({}, getFilteredPlayers(["f", "h"]), {[slot]: state.players[slot]})
+                                Object.assign({}, getFilteredPlayers(["f", "h"], playerRoles), {[slot]: state.players[slot]})
                             );
                     else if (state.players[slot] && (state.players[slot].role === "c"))
                         send(user, "player-state",
-                            Object.assign({}, getFilteredPlayers(["c"]), {[slot]: state.players[slot]})
+                            Object.assign({}, getFilteredPlayers(["c"], playerRoles), {[slot]: state.players[slot]})
                         );
                     else if (state.players[slot])
                         send(user, "player-state", {[slot]: state.players[slot]});
@@ -116,7 +119,7 @@ function init(wsServer, path) {
                 },
                 sendStateSlot = (slot) => sendState(room.playerSlots[slot]),
                 updateState = () => [...room.onlinePlayers].forEach(sendState),
-                getFilteredPlayers = (roles) => {
+                getFilteredPlayers = (roles, playerRoles) => {
                     return Object.keys(playerRoles)
                         .filter((slot) => roles.includes(playerRoles[slot].role))
                         .reduce((res, slot) => {
@@ -217,10 +220,6 @@ function init(wsServer, path) {
                             }
                         }
                         room.currentPres = getRandomPlayer([]);
-                        playerRoles = {};
-                        room.activeSlots.forEach((slot) => {
-                            playerRoles[slot] = {role: state.players[slot].role};
-                        });
                         if (room.rebalanced) {
                             if (room.activeSlots.size === 6)
                                 room.fascTrack = 1;
