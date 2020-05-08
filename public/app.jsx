@@ -1521,7 +1521,6 @@ class Game extends React.Component {
                             </div>
                             <CommonRoom state={this.state} app={this}/>
                         </div>
-                        x
                     </div>
                 );
             } else return (<div/>);
