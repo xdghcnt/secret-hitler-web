@@ -643,7 +643,7 @@ body {
 }
 
 .deck.discard {
-    padding-left: 0;
+    padding-left: 4px;
 }
 
 .deck-count {
