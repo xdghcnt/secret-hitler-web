@@ -43,8 +43,7 @@ function init(wsServer, path) {
                     cCount: 6,
                     paused: false,
                     time: null,
-                    timeTotal: null,
-                    videoMode: false
+                    timeTotal: null
                 }),
                 state = {
                     players: {},
@@ -73,6 +72,7 @@ function init(wsServer, path) {
                     actionTime: 180,
                     smallActionTime: 30,
                     triTeam: false,
+                    videoMode: false,
                     testMode
                 },
                 resetRoom = () => Object.assign(room, getResetParams());
