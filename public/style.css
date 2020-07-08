@@ -1280,7 +1280,7 @@ body {
 }
 
 .video-mode .player-name-text {
-    max-width: none;
+    max-width: 201px;
 }
 
 .video-mode .avatar {
