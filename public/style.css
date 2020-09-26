@@ -1322,3 +1322,15 @@ body {
 .avatar.has-video {
     background: none !important;
 }
+
+.user-audio-marker.hasVoice {
+    box-shadow: 0 0 3px 3px #ffffff26;
+}
+
+.user-audio-marker.muted {
+    box-shadow: 0 0 3px 3px #aeaeae99;
+}
+
+.user-audio-marker.speaking {
+    box-shadow: 0 0 8px 2px #4cb873 !important;
+}

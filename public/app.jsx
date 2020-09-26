@@ -29,6 +29,7 @@ class Player extends React.Component {
                  onTouchStart={(e) => e.target.focus()}
                  data-playerId={id}>
                 <div className={cs("player-name-text", `bg-color-${this.props.slot}`)}>
+                    {this.props.isSpectator ? <UserAudioMarker data={data} user={id}/> : ""}
                     {hasPlayer
                         ? data.playerNames[id]
                         : (data.teamsLocked
@@ -198,7 +199,8 @@ class PlayerSlot extends React.Component {
                 roleCardIndex = roles.indexOf("l1");
             const
                 hasVideo = !!data.media.videoTracks[player],
-                wasShot = !!~data.playersShot.indexOf(slot);
+                wasShot = !!~data.playersShot.indexOf(slot),
+                inactive = !~data.activeSlots.indexOf(slot) && data.playerSlots[slot];
             return (
                 <div
                     className={cs("player-slot", `player-slot-${slot}`, {
@@ -209,9 +211,9 @@ class PlayerSlot extends React.Component {
                         "prev-can": data.prevCan,
                         "shot": wasShot,
                         "unoccupied": !~data.activeSlots.indexOf(slot) && data.teamsLocked && !data.playerSlots[slot],
-                        "inactive": !~data.activeSlots.indexOf(slot) && data.playerSlots[slot]
-                    })}>
-                    <div className="player-section">
+                        inactive
+                    }, ...(!inactive ? UserAudioMarker.getAudioMarkerClasses(data, player) : []))}>
+                    <div className={cs("player-section", ...(inactive ? UserAudioMarker.getAudioMarkerClasses(data, player) : []))}>
                         <div className={cs("avatar", {"no-player": player == null, "has-video": hasVideo})}
                              onTouchStart={(e) => e.target.focus()}
                              style={{
@@ -553,6 +555,7 @@ class NoteButtons extends React.Component {
 
 class Game extends React.Component {
     componentDidMount() {
+        this.gameName = "secret-hitler";
         const initArgs = {};
         if (!localStorage.secretHitlerUserId || !localStorage.secretHitlerUserToken) {
             while (!localStorage.userName)
@@ -684,8 +687,9 @@ class Game extends React.Component {
 
     enableMediaSoup() {
         this.mediaSoupEnabled = true;
+        const roomId = `${this.gameName}-${this.state.roomId}-video`;
         this.mediaRoom = new window.MediaSoupRoom(
-            `wss://meme-police.com:2345/?roomId=secret-hitler-${this.roomId}&userId=${this.userId}`
+            `wss://meme-police.com:2345/?roomId=${roomId}&userId=${this.userId}`
         );
         this.mediaRoom.join();
 

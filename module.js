@@ -1,15 +1,14 @@
 function init(wsServer, path) {
     const
         fs = require("fs"),
-        express = require("express"),
         app = wsServer.app,
         registry = wsServer.users,
         channel = "secret-hitler",
         testMode = process.argv[2] === "debug";
 
-    app.use("/secret-hitler", express.static(`${__dirname}/public`));
+    app.use("/secret-hitler", wsServer.static(`${__dirname}/public`));
     if (registry.config.appDir)
-        app.use("/secret-hitler", express.static(`${registry.config.appDir}/public`));
+        app.use("/secret-hitler", wsServer.static(`${registry.config.appDir}/public`));
 
     registry.handleAppPage(path, `${__dirname}/public/app.html`);
 
@@ -43,7 +42,8 @@ function init(wsServer, path) {
                     cCount: 6,
                     paused: false,
                     time: null,
-                    timeTotal: null
+                    timeTotal: null,
+                    managedVoice: true
                 }),
                 state = {
                     players: {},
@@ -73,6 +73,7 @@ function init(wsServer, path) {
                     smallActionTime: 30,
                     triTeam: false,
                     videoMode: false,
+                    managedVoice: true,
                     testMode
                 },
                 resetRoom = () => Object.assign(room, getResetParams());
@@ -90,7 +91,18 @@ function init(wsServer, path) {
                 send = (target, event, data) => userRegistry.send(target, event, data),
                 update = () => {
                     updateDeckSize();
+                    if (room.voiceEnabled)
+                        processUserVoice();
                     send(room.onlinePlayers, "state", room);
+                },
+                processUserVoice = () => {
+                    room.userVoice = {};
+                    room.onlinePlayers.forEach((user) => {
+                        if (!room.managedVoice || !room.teamsLocked || room.phase === "idle")
+                            room.userVoice[user] = true;
+                        else if (room.activeSlots.has(room.playerSlots.indexOf(user)) && !room.playersShot.has(room.playerSlots.indexOf(user)))
+                            room.userVoice[user] = true;
+                    });
                 },
                 sendState = (user) => {
                     const playerRoles = {};
@@ -441,6 +453,7 @@ function init(wsServer, path) {
                         registry.log(error.message);
                     }
                 };
+            this.updatePublicState = update;
             this.userJoin = userJoin;
             this.userLeft = userLeft;
             this.userEvent = userEvent;
@@ -667,6 +680,7 @@ function init(wsServer, path) {
                 }
             };
             this.userEventHandlers = {
+                ...this.eventHandlers,
                 "start-game": (user) => {
                     if (user === room.hostId)
                         startGame();
