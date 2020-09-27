@@ -573,7 +573,7 @@ class Game extends React.Component {
         initArgs.token = this.userToken = localStorage.secretHitlerUserToken;
         initArgs.userName = localStorage.userName;
         initArgs.wssToken = window.wssToken;
-        localStorage.webcamEnabled = localStorage.webcamEnabled || 1;
+        localStorage.webcamEnabled = 0;
         if (initArgs.roomId.includes("p" + "u" + "t" + "i" + "n"))
             document.documentElement.classList.add("ptn");
         this.socket = window.socket.of("secret-hitler");

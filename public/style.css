@@ -1334,3 +1334,7 @@ body {
 .user-audio-marker.speaking {
     box-shadow: 0 0 8px 2px #4cb873 !important;
 }
+
+.meter-track {
+    background: #7be006;
+}
