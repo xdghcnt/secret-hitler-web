@@ -650,8 +650,8 @@ class Game extends React.Component {
         this.dealSound.volume = 0.3;
         this.tapSound = new Audio("/secret-hitler/media/tap.mp3");
         this.tapSound.volume = 0.3;
-        this.tapSoundL = new Audio("/secret-hitler/media/tap_l.ogg");
-        this.tapSoundR = new Audio("/secret-hitler/media/tap_r.ogg");
+        this.tapSoundL = new Audio("/secret-hitler/media/tap_l.mp3");
+        this.tapSoundR = new Audio("/secret-hitler/media/tap_r.mp3");
         this.timerSound = new Audio("/secret-hitler/media/tick.mp3");
         this.timerSound.volume = 0.4;
         this.votesTiltUpdate();
