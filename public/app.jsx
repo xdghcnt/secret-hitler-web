@@ -1417,8 +1417,7 @@ class Game extends React.Component {
                                 </div>
                             </div>
                             <div className="help-panel" onTouchStart={(e) => e.target.focus()}>
-                                <i onClick={() => this.showHelp()}
-                                   className="material-icons">help</i>
+                                <i className="material-icons">help</i>
                                 <div className="status-message">{status}</div>
                             </div>
                             <div className="win-banners">
