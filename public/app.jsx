@@ -1218,8 +1218,10 @@ class Game extends React.Component {
                             if (this.state.timed && time < 11000 && ((Math.floor(prevTime / 1000) - Math.floor(time / 1000)) > 0) && !parseInt(localStorage.muteSounds)) {
                                 this.timerSound.play();
                                 const watchFace = document.getElementById("watch-face");
-                                watchFace.classList.add("blink");
-                                setTimeout(() => watchFace.classList.remove("blink"), 0);
+                                if (watchFace) {
+                                    watchFace.classList.add("blink");
+                                    setTimeout(() => watchFace.classList.remove("blink"), 0);
+                                }
                             }
                         }
                         if (!this.state.timed)
