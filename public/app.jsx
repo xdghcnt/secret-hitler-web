@@ -579,7 +579,11 @@ class Game extends React.Component {
         this.socket = window.socket.of("secret-hitler");
         this.socket.on("state", (state) => {
             const userSlot = state.playerSlots.indexOf(this.userId);
-            CommonRoom.processCommonRoom(state, this.state);
+            CommonRoom.processCommonRoom(state, this.state, {
+                maxPlayers: 10,
+                largeImageKey: "secret-hitler",
+                details: "Secret Hitler"
+            });
 
             if (!this.mediaSoupEnabled && state.videoMode)
                 this.enableMediaSoup();

@@ -51,7 +51,7 @@ function init(wsServer, path) {
                     discardDeck: []
                 },
                 room = {
-                    roomId: hostData.roomId,
+                    ...this.room,
                     inited: true,
                     hostId: hostId,
                     spectators: new JSONSet(),
