@@ -572,7 +572,10 @@ function init(wsServer, path) {
                     }
                 },
                 "set-pres": (slot, presSlot) => {
-                    if (room.presAction === "election" && room.currentPres === slot && state.players[presSlot] && slot !== presSlot) {
+                    if (room.presAction === "election" && room.currentPres === slot
+                        && state.players[presSlot]
+                        && slot !== presSlot
+                        && !room.playersShot.has(presSlot)) {
                         room.prevPres = room.currentPres;
                         if (!room.specialElection)
                             room.preSpecialElectionPres = room.currentPres;
