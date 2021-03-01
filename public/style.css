@@ -1338,3 +1338,11 @@ body {
 .meter-track {
     background: #7be006;
 }
+
+.chat:not(.active) .chat-messages {
+    color: white;
+}
+
+.chat-send-input {
+    color: black !important;
+}
