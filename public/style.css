@@ -1346,3 +1346,7 @@ body {
 .chat-send-input {
     color: black !important;
 }
+
+.chat.active .chat-tab-buttons {
+    background: #ffffff57;
+}
