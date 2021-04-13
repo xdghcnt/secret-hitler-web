@@ -393,7 +393,7 @@ class NoteItem extends React.Component {
                 note = "",
                 noteExpanded = "";
             if (item.type === "enact")
-                note = getEnactLine(lastLine.slice(), true);  
+                note = getEnactLine(lastLine.slice(), true);
             if (item.type === "veto")
                 note = getVetoLine(lastLine.slice(), true);
             else if (item.type === "skip")
