@@ -48,7 +48,7 @@ function init(wsServer, path) {
                 state = {
                     players: {},
                     deck: [],
-                    discardDeck: [],
+                    discardDeck: []
                 },
                 room = {
                     ...this.room,
@@ -74,7 +74,7 @@ function init(wsServer, path) {
                     triTeam: false,
                     videoMode: false,
                     managedVoice: true,
-                    testMode,
+                    testMode, 
                     lastCards: []
                 },
                 resetRoom = () => Object.assign(room, getResetParams());
@@ -300,11 +300,9 @@ function init(wsServer, path) {
                     room.phase = "pres-draw";
                     state.players[room.currentPres].cards = state.deck.splice(0, 3);
                     room.lastCards = [];
-
-                      state.players[room.currentPres].cards.forEach(function(item) {
+                    state.players[room.currentPres].cards.forEach(function(item) {
                         room.lastCards.push(item.toUpperCase());
-                      }
-                      );
+                    });
                     room.lastCards.sort();
                     startTimer();
                     update();
@@ -316,15 +314,12 @@ function init(wsServer, path) {
                     let cancards = [];
                     state.players[room.currentCan].cards.forEach(function(item) {
                         cancards.push(item.toUpperCase());
-                      }
-                    );
+                    });
                     cancards.sort();
                     room.lastCards.push(">");
                     cancards.forEach(function(item) {
                         room.lastCards.push(item);
-                      }
-                    );
-                    
+                    });
                     startTimer();
                     update();
                     sendStateSlot(room.currentCan);
@@ -385,11 +380,8 @@ function init(wsServer, path) {
                         lastClaim.claims = [["???", "??", (!room.triTeam && card === "f") ? "FF" : "??", card.toUpperCase()]];
                         room.lastCards.push(">");
                         room.lastCards.push(card.toUpperCase());
-
                         lastClaim.truelogs = [ [] ];
                         lastClaim.truelogs.push(room.lastCards);
-
-                       room.lastCards = [];
                         lastClaim.card = card.toUpperCase();
                         if (room.vetoRequest === false)
                             lastClaim.vetoDenied = true;
@@ -636,11 +628,9 @@ function init(wsServer, path) {
                             state.discardDeck.push(...state.players[room.currentCan].cards.splice(0));
                             const lastClaim = room.whiteBoard[room.whiteBoard.length - 1];
                             lastClaim.type = "veto";
-                            lastClaim.claims = [!room.triTeam ? ["FFF", "FF", "FF"] : ["???", "??", "??"]];      
+                            lastClaim.claims = [!room.triTeam ? ["FFF", "FF", "FF"] : ["???", "??", "??"]];
                             lastClaim.truelogs = [ [] ];
                             lastClaim.truelogs.push(room.lastCards);
-
-
                             sendStateSlot(room.currentPres);
                             processReshuffle();
                             incrSkipTrack();
