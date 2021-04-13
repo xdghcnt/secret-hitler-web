@@ -79,7 +79,7 @@ function init(wsServer, path) {
                 },
                 resetRoom = () => Object.assign(room, getResetParams());
             resetRoom();
-            if (true)
+            if (testMode)
                 [1, 2, 3, 4, 5, 6, 7, 8, 9].forEach((ind) => {
                     room.playerSlots[ind] = `kek${ind}`;
                     room.playerNames[`kek${ind}`] = `kek${ind}`;
@@ -303,7 +303,7 @@ function init(wsServer, path) {
                     state.players[room.currentPres].cards.forEach(function(item) {
                         room.lastCards.push(item.toUpperCase());
                     });
-                    room.lastCards.sort();
+                  room.lastCards.sort(sortCards);
                     startTimer();
                     update();
                     sendStateSlot(room.currentPres);
@@ -315,7 +315,7 @@ function init(wsServer, path) {
                     state.players[room.currentCan].cards.forEach(function(item) {
                         cancards.push(item.toUpperCase());
                     });
-                    cancards.sort();
+                    cancards.sort(sortCards);
                     room.lastCards.push(">");
                     cancards.forEach(function(item) {
                         room.lastCards.push(item);
@@ -884,6 +884,14 @@ function init(wsServer, path) {
 
     function getRandomInt(min, max) {
         return Math.floor(Math.random() * (max - min + 1) + min);
+    }
+
+    function sortCards(firstC, secondC) {
+        if (firstC=='F' && (secondC=='C' || secondC=='L')) return -1;
+        if (firstC=='C' && secondC=='L') return -1;
+        if (firstC=='C' && secondC=='F') return 1;
+        if (firstC=='L' && (secondC=='F' || secondC=='C')) return 1;
+        return 0;
     }
 
     registry.createRoomManager(path, channel, GameState);
