@@ -341,6 +341,7 @@ class NoteItem extends React.Component {
                 space = <span className="log-space"/>,
                 lastLine = item.claims && item.claims[item.claims.length - 1],
                 prevLines = item.claims && item.claims.slice(1, item.claims.length - 1),
+                lastLogLine = item.truelogs && item.truelogs[item.truelogs.length - 1],
                 getEnactLine = (lineOrig, last, isVeto) => {
                     const line = lineOrig && lineOrig.slice();
                     if (line && (line[1] === line[2] || line[1] === "??" || line[2] === "??"))
@@ -357,7 +358,16 @@ class NoteItem extends React.Component {
                             )
                             : <span className="color-down">Downvoted</span>}
                         {last && item.vetoDenied === true ? (<span>{space}(Veto denied)</span>) : ""}
+                        
                     </div>;
+                }, 
+                getMem = (line2) => {
+                     return <div className="mem">
+                       { (true && line2.length>0) ?
+                        line2.map((cards, ind) => [cards=='>' ? arrow : "", cards.split("").map((card) => cardTypes[card])])
+                        : ""
+                        }
+                        </div>;
                 },
                 getVetoLine = (lineOrig, last) => getEnactLine(lineOrig, last, true),
                 getInspectLine = (line) => {
@@ -387,7 +397,7 @@ class NoteItem extends React.Component {
                 note = "",
                 noteExpanded = "";
             if (item.type === "enact")
-                note = getEnactLine(lastLine.slice(), true);
+                 note = getEnactLine(lastLine.slice(), true, false);  
             if (item.type === "veto")
                 note = getVetoLine(lastLine.slice(), true);
             else if (item.type === "skip")
@@ -429,6 +439,8 @@ class NoteItem extends React.Component {
                         {getVotesLine(item.votes.nein, item.votes.ja, "Nein")}
                         {item.type === "enact" ? prevLines.map((line, index, arr) => getEnactLine(line, index === arr[index - 1])) : ""}
                         {item.type === "veto" ? prevLines.map((line, index, arr) => getVetoLine(line, index === arr[index - 1])) : ""}
+                        {(data.phase === "idle" && (item.type === "enact" || item.type == "veto")) ?
+                        getMem(lastLogLine) : ""}
                     </div>;
                 else if (item.type === "inspect")
                     noteExpanded = <div className="note-expanded">
@@ -1171,7 +1183,7 @@ class Game extends React.Component {
                         medium: ["", "", "", "", ""],
                         large: ["", "", "", "", ""]
                     }[gameType],
-                    actionsOrderC = ["inspect", "election", "shooting-veto", ""],
+                    actionsOrderC = ["inspect", "election", "shooting-veto", "shooting"],
                     actions = ["", "inspect-deck", "inspect", "election", "shooting", "shooting-veto"],
                     welcomeMessage = <div className="welcome-message">
                         {data.phase === "idle" && data.partyWin === null
