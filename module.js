@@ -74,7 +74,7 @@ function init(wsServer, path) {
                     triTeam: false,
                     videoMode: false,
                     managedVoice: true,
-                    testMode: true,
+                    testMode,
                     lastCards: []
                 },
                 resetRoom = () => Object.assign(room, getResetParams());
