@@ -792,7 +792,6 @@ function init(wsServer, path) {
                             room.blackSlotPlayers.delete(playerId);
                     }
                     update();
-                    state.chel = playerId;
                     sendState(playerId);
                 },
                 "players-join": (user, slot) => {
