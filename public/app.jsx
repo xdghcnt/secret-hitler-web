@@ -341,7 +341,7 @@ class NoteItem extends React.Component {
                 space = <span className="log-space"/>,
                 lastLine = item.claims && item.claims[item.claims.length - 1],
                 prevLines = item.claims && item.claims.slice(1, item.claims.length - 1),
-                lastLogLine = item.truelogs && item.truelogs[item.truelogs.length - 1],
+                prevLogs = (game.state.trueLogs === undefined) ? "" : (game.state.trueLogs),
                 getEnactLine = (lineOrig, last, isVeto) => {
                     const line = lineOrig && lineOrig.slice();
                     if (line && (line[1] === line[2] || line[1] === "??" || line[2] === "??"))
@@ -392,6 +392,8 @@ class NoteItem extends React.Component {
             let
                 note = "",
                 noteExpanded = "";
+            if ((item.type === "enact" || item.type === "veto") && !game.NIIndexToTLIndex.has(index))
+                game.NIIndexToTLIndex.set(index, game.NIIndexToTLIndex.size);
             if (item.type === "enact")
                 note = getEnactLine(lastLine.slice(), true);
             if (item.type === "veto")
@@ -435,7 +437,7 @@ class NoteItem extends React.Component {
                         {getVotesLine(item.votes.nein, item.votes.ja, "Nein")}
                         {item.type === "enact" ? prevLines.map((line, index, arr) => getEnactLine(line, index === arr[index - 1])) : ""}
                         {item.type === "veto" ? prevLines.map((line, index, arr) => getVetoLine(line, index === arr[index - 1])) : ""}
-                        {(data.phase === "idle" && (item.type === "enact" || item.type == "veto")) ? getTrueLog(lastLogLine) : ""}
+                        {((prevLogs.length>0)  && (item.type === "enact" || item.type == "veto")) ? getTrueLog(prevLogs[game.NIIndexToTLIndex.get(index)]) : ""}
                     </div>;
                 else if (item.type === "inspect")
                     noteExpanded = <div className="note-expanded">
@@ -574,6 +576,7 @@ class Game extends React.Component {
             history.replaceState(undefined, undefined, location.origin + location.pathname + "#" + makeId());
         else
             history.replaceState(undefined, undefined, location.origin + location.pathname + location.hash);
+        this.NIIndexToTLIndex = new Map();
         initArgs.avatarId = localStorage.avatarId;
         initArgs.roomId = this.roomId = location.hash.substr(1);
         initArgs.userId = this.userId = localStorage.secretHitlerUserId;
@@ -628,13 +631,26 @@ class Game extends React.Component {
                     this.publishUserVideo();
             });
         });
-        this.socket.on("player-state", (players) => {
-            if (players[this.state.userSlot] && players[this.state.userSlot].cards)
+        /*
+        this.socket.on("player-state", (info) => {
+            if (info.players[this.state.userSlot] && info.players[this.state.userSlot].cards)
                 this.state.cardSelected = null;
             this.setState(Object.assign(this.state, {
-                players: players
+                players: info.players
             }));
         });
+        */
+       
+        this.socket.on("player-state", (info) => {
+            if (info.players[this.state.userSlot] && info.players[this.state.userSlot].cards)
+                this.state.cardSelected = null;
+            this.setState(Object.assign(this.state, {
+                players: info.players,
+                trueLogs: info.trueLogs
+            }));
+        });
+        
+        
         window.socket.on("disconnect", (event) => {
             this.setState({
                 inited: false,
