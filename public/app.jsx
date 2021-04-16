@@ -631,16 +631,6 @@ class Game extends React.Component {
                     this.publishUserVideo();
             });
         });
-        /*
-        this.socket.on("player-state", (info) => {
-            if (info.players[this.state.userSlot] && info.players[this.state.userSlot].cards)
-                this.state.cardSelected = null;
-            this.setState(Object.assign(this.state, {
-                players: info.players
-            }));
-        });
-        */
-       
         this.socket.on("player-state", (info) => {
             if (info.players[this.state.userSlot] && info.players[this.state.userSlot].cards)
                 this.state.cardSelected = null;
@@ -649,8 +639,6 @@ class Game extends React.Component {
                 trueLogs: info.trueLogs
             }));
         });
-        
-        
         window.socket.on("disconnect", (event) => {
             this.setState({
                 inited: false,
