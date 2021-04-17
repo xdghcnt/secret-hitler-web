@@ -48,7 +48,8 @@ function init(wsServer, path) {
                 state = {
                     players: {},
                     deck: [],
-                    discardDeck: []
+                    discardDeck: [],
+                    trueLogs: [[]]
                 },
                 room = {
                     ...this.room,
@@ -111,23 +112,23 @@ function init(wsServer, path) {
                     });
                     const slot = room.playerSlots.indexOf(user);
                     if (room.phase === "idle" || room.blackSlotPlayers.has(user))
-                        send(user, "player-state", state.players);
+                        send(user, "player-state", Object.assign({}, {players: state.players}, {trueLogs: state.trueLogs}));
                     else if (state.players[slot] && (state.players[slot].role === "f"
                         || (room.activeSlots.size < 7 && state.players[slot].role === "h")))
                         if (!room.triTeam)
-                            send(user, "player-state", Object.assign({}, playerRoles, {[slot]: state.players[slot]}));
+                            send(user, "player-state", {players: Object.assign({}, playerRoles, {[slot]: state.players[slot]})});
                         else
                             send(user, "player-state",
-                                Object.assign({}, getFilteredPlayers(["f", "h"], playerRoles), {[slot]: state.players[slot]})
+                               {players: Object.assign({}, getFilteredPlayers(["f", "h"], playerRoles), {[slot]: state.players[slot]})}
                             );
                     else if (state.players[slot] && (state.players[slot].role === "c"))
                         send(user, "player-state",
-                            Object.assign({}, getFilteredPlayers(["c"], playerRoles), {[slot]: state.players[slot]})
+                            {players: Object.assign({}, getFilteredPlayers(["c"], playerRoles), {[slot]: state.players[slot]})}
                         );
                     else if (state.players[slot])
-                        send(user, "player-state", {[slot]: state.players[slot]});
+                        send(user, "player-state", {players: {[slot]: state.players[slot]}});
                     else
-                        send(user, "player-state", {})
+                        send(user, "player-state", {players: {}})
                 },
                 sendStateSlot = (slot) => sendState(room.playerSlots[slot]),
                 updateState = () => [...room.onlinePlayers].forEach(sendState),
@@ -190,6 +191,7 @@ function init(wsServer, path) {
                     }
                 },
                 startGame = () => {
+                    state.trueLogs = [];
                     const playersCount = room.playerSlots.filter((user) => user !== null).length;
                     if (isEnoughPlayers()) {
                         resetRoom();
@@ -298,6 +300,11 @@ function init(wsServer, path) {
                 startPresDraw = () => {
                     room.phase = "pres-draw";
                     state.players[room.currentPres].cards = state.deck.splice(0, 3);
+                    state.trueLogs.push([]);
+                    state.players[room.currentPres].cards.forEach(function(card) {
+                        state.trueLogs[state.trueLogs.length-1].push(card.toUpperCase());
+                    });
+                    state.trueLogs[state.trueLogs.length-1].sort(sortCards);
                     startTimer();
                     update();
                     sendStateSlot(room.currentPres);
@@ -305,6 +312,15 @@ function init(wsServer, path) {
                 startCanDraw = () => {
                     room.phase = "can-draw";
                     state.players[room.currentCan].cards = state.players[room.currentPres].cards.splice(0);
+                    let canCards = [];
+                    state.players[room.currentCan].cards.forEach(function(card) {
+                        canCards.push(card.toUpperCase());
+                    });
+                    canCards.sort(sortCards);
+                    state.trueLogs[state.trueLogs.length-1].push(">");
+                    canCards.forEach(function(card) {
+                        state.trueLogs[state.trueLogs.length-1].push(card);
+                    });
                     startTimer();
                     update();
                     sendStateSlot(room.currentCan);
@@ -363,6 +379,9 @@ function init(wsServer, path) {
                         const lastClaim = room.whiteBoard[room.whiteBoard.length - 1];
                         lastClaim.type = "enact";
                         lastClaim.claims = [["???", "??", (!room.triTeam && card === "f") ? "FF" : "??", card.toUpperCase()]];
+                        state.trueLogs[state.trueLogs.length-1].push(">");
+                        state.trueLogs[state.trueLogs.length-1].push(card.toUpperCase());
+                        for (let user of room.blackSlotPlayers.keys()) sendState(user);
                         lastClaim.card = card.toUpperCase();
                         if (room.vetoRequest === false)
                             lastClaim.vetoDenied = true;
@@ -610,6 +629,7 @@ function init(wsServer, path) {
                             const lastClaim = room.whiteBoard[room.whiteBoard.length - 1];
                             lastClaim.type = "veto";
                             lastClaim.claims = [!room.triTeam ? ["FFF", "FF", "FF"] : ["???", "??", "??"]];
+                            for (let user of room.blackSlotPlayers.keys()) sendState(user);
                             sendStateSlot(room.currentPres);
                             processReshuffle();
                             incrSkipTrack();
@@ -863,6 +883,14 @@ function init(wsServer, path) {
 
     function getRandomInt(min, max) {
         return Math.floor(Math.random() * (max - min + 1) + min);
+    }
+
+    function sortCards(firstC, secondC) {
+        if (firstC=='F' && (secondC=='C' || secondC=='L')) return -1;
+        if (firstC=='C' && secondC=='L') return -1;
+        if (firstC=='C' && secondC=='F') return 1;
+        if (firstC=='L' && (secondC=='F' || secondC=='C')) return 1;
+        return 0;
     }
 
     registry.createRoomManager(path, channel, GameState);
