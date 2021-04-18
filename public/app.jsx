@@ -213,7 +213,8 @@ class PlayerSlot extends React.Component {
                         "unoccupied": !~data.activeSlots.indexOf(slot) && data.teamsLocked && !data.playerSlots[slot],
                         inactive
                     }, ...(!inactive ? UserAudioMarker.getAudioMarkerClasses(data, player) : []))}>
-                    <div className={cs("player-section", ...(inactive ? UserAudioMarker.getAudioMarkerClasses(data, player) : []))}>
+                    <div
+                        className={cs("player-section", ...(inactive ? UserAudioMarker.getAudioMarkerClasses(data, player) : []))}>
                         <div className={cs("avatar", {"no-player": player == null, "has-video": hasVideo})}
                              onTouchStart={(e) => e.target.focus()}
                              style={{
@@ -341,7 +342,6 @@ class NoteItem extends React.Component {
                 space = <span className="log-space"/>,
                 lastLine = item.claims && item.claims[item.claims.length - 1],
                 prevLines = item.claims && item.claims.slice(1, item.claims.length - 1),
-                prevLogs = (game.state.trueLogs === undefined) ? "" : (game.state.trueLogs),
                 getEnactLine = (lineOrig, last, isVeto) => {
                     const line = lineOrig && lineOrig.slice();
                     if (line && (line[1] === line[2] || line[1] === "??" || line[2] === "??"))
@@ -359,11 +359,12 @@ class NoteItem extends React.Component {
                             : <span className="color-down">Downvoted</span>}
                         {last && item.vetoDenied === true ? (<span>{space}(Veto denied)</span>) : ""}
                     </div>;
-                }, 
-                getTrueLog = (line) => {
-                    return <div>
-                        {line.map((cards, ind) => [cards=='>' ? arrow : "", cards.split("").map((card) => cardTypes[card])])}
-                    </div>;
+                },
+                getTrueLog = (index) => {
+                    return game.state.trueLogs && game.state.trueLogs[index] ? <div>
+                        (Actual{colon} {game.state.trueLogs[index].map((cards, ind) => [ind ? arrow : "", cards.split("")
+                        .map((card) => cardTypes[card])])})
+                    </div> : "";
                 },
                 getVetoLine = (lineOrig, last) => getEnactLine(lineOrig, last, true),
                 getInspectLine = (line) => {
@@ -392,8 +393,6 @@ class NoteItem extends React.Component {
             let
                 note = "",
                 noteExpanded = "";
-            if ((item.type === "enact" || item.type === "veto") && !game.NIIndexToTLIndex.has(index))
-                game.NIIndexToTLIndex.set(index, game.NIIndexToTLIndex.size);
             if (item.type === "enact")
                 note = getEnactLine(lastLine.slice(), true);
             if (item.type === "veto")
@@ -437,7 +436,7 @@ class NoteItem extends React.Component {
                         {getVotesLine(item.votes.nein, item.votes.ja, "Nein")}
                         {item.type === "enact" ? prevLines.map((line, index, arr) => getEnactLine(line, index === arr[index - 1])) : ""}
                         {item.type === "veto" ? prevLines.map((line, index, arr) => getVetoLine(line, index === arr[index - 1])) : ""}
-                        {((prevLogs.length>0)  && (item.type === "enact" || item.type == "veto")) ? getTrueLog(prevLogs[game.NIIndexToTLIndex.get(index)]) : ""}
+                        {(item.type === "enact" || item.type === "veto") ? getTrueLog(index) : ""}
                     </div>;
                 else if (item.type === "inspect")
                     noteExpanded = <div className="note-expanded">
@@ -576,7 +575,6 @@ class Game extends React.Component {
             history.replaceState(undefined, undefined, location.origin + location.pathname + "#" + makeId());
         else
             history.replaceState(undefined, undefined, location.origin + location.pathname + location.hash);
-        this.NIIndexToTLIndex = new Map();
         initArgs.avatarId = localStorage.avatarId;
         initArgs.roomId = this.roomId = location.hash.substr(1);
         initArgs.userId = this.userId = localStorage.secretHitlerUserId;

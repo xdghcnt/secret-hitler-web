@@ -49,7 +49,7 @@ function init(wsServer, path) {
                     players: {},
                     deck: [],
                     discardDeck: [],
-                    trueLogs: [[]]
+                    trueLogs: []
                 },
                 room = {
                     ...this.room,
@@ -119,7 +119,7 @@ function init(wsServer, path) {
                             send(user, "player-state", {players: Object.assign({}, playerRoles, {[slot]: state.players[slot]})});
                         else
                             send(user, "player-state",
-                               {players: Object.assign({}, getFilteredPlayers(["f", "h"], playerRoles), {[slot]: state.players[slot]})}
+                                {players: Object.assign({}, getFilteredPlayers(["f", "h"], playerRoles), {[slot]: state.players[slot]})}
                             );
                     else if (state.players[slot] && (state.players[slot].role === "c"))
                         send(user, "player-state",
@@ -297,30 +297,24 @@ function init(wsServer, path) {
                     updateState();
                     update();
                 },
+                sortCards = (a, b) => {
+                    const order = "FCL";
+                    return order.indexOf(a) - order.indexOf(b);
+                },
                 startPresDraw = () => {
                     room.phase = "pres-draw";
-                    state.players[room.currentPres].cards = state.deck.splice(0, 3);
-                    state.trueLogs.push([]);
-                    state.players[room.currentPres].cards.forEach(function(card) {
-                        state.trueLogs[state.trueLogs.length-1].push(card.toUpperCase());
-                    });
-                    state.trueLogs[state.trueLogs.length-1].sort(sortCards);
+                    const presCards = state.deck.splice(0, 3);
+                    state.players[room.currentPres].cards = presCards;
+                    state.trueLogs[room.whiteBoard.length - 1] = [presCards.map((card) => card.toUpperCase()).sort(sortCards).join()];
                     startTimer();
                     update();
                     sendStateSlot(room.currentPres);
                 },
                 startCanDraw = () => {
                     room.phase = "can-draw";
-                    state.players[room.currentCan].cards = state.players[room.currentPres].cards.splice(0);
-                    let canCards = [];
-                    state.players[room.currentCan].cards.forEach(function(card) {
-                        canCards.push(card.toUpperCase());
-                    });
-                    canCards.sort(sortCards);
-                    state.trueLogs[state.trueLogs.length-1].push(">");
-                    canCards.forEach(function(card) {
-                        state.trueLogs[state.trueLogs.length-1].push(card);
-                    });
+                    const canCards = state.players[room.currentPres].cards.splice(0);
+                    state.players[room.currentCan].cards = canCards;
+                    state.trueLogs[room.whiteBoard.length - 1].push(canCards.map((card) => card.toUpperCase()).sort(sortCards).join());
                     startTimer();
                     update();
                     sendStateSlot(room.currentCan);
@@ -379,9 +373,7 @@ function init(wsServer, path) {
                         const lastClaim = room.whiteBoard[room.whiteBoard.length - 1];
                         lastClaim.type = "enact";
                         lastClaim.claims = [["???", "??", (!room.triTeam && card === "f") ? "FF" : "??", card.toUpperCase()]];
-                        state.trueLogs[state.trueLogs.length-1].push(">");
-                        state.trueLogs[state.trueLogs.length-1].push(card.toUpperCase());
-                        for (let user of room.blackSlotPlayers.keys()) sendState(user);
+                        state.trueLogs[room.whiteBoard.length - 1].push(card.toUpperCase());
                         lastClaim.card = card.toUpperCase();
                         if (room.vetoRequest === false)
                             lastClaim.vetoDenied = true;
@@ -407,6 +399,7 @@ function init(wsServer, path) {
                     else if (room.comTrack === 3)
                         room.vetoActive = true;
                     processReshuffle();
+                    updateState();
                 },
                 processReshuffle = () => {
                     if (state.deck.length < 3) {
@@ -629,7 +622,6 @@ function init(wsServer, path) {
                             const lastClaim = room.whiteBoard[room.whiteBoard.length - 1];
                             lastClaim.type = "veto";
                             lastClaim.claims = [!room.triTeam ? ["FFF", "FF", "FF"] : ["???", "??", "??"]];
-                            for (let user of room.blackSlotPlayers.keys()) sendState(user);
                             sendStateSlot(room.currentPres);
                             processReshuffle();
                             incrSkipTrack();
@@ -883,14 +875,6 @@ function init(wsServer, path) {
 
     function getRandomInt(min, max) {
         return Math.floor(Math.random() * (max - min + 1) + min);
-    }
-
-    function sortCards(firstC, secondC) {
-        if (firstC=='F' && (secondC=='C' || secondC=='L')) return -1;
-        if (firstC=='C' && secondC=='L') return -1;
-        if (firstC=='C' && secondC=='F') return 1;
-        if (firstC=='L' && (secondC=='F' || secondC=='C')) return 1;
-        return 0;
     }
 
     registry.createRoomManager(path, channel, GameState);
