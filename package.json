@@ -6,8 +6,5 @@
   "files": [
     "module.js",
     "public"
-  ],
-  "dependencies": {
-    "node-fetch": "2.6.0"
-  }
+  ]
 }
