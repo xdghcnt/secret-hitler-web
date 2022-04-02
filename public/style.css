@@ -1350,3 +1350,7 @@ body {
 .chat.active .chat-tab-buttons {
     background: #ffffff57;
 }
+
+.konfa-menu img {
+    filter: brightness(0.2) !important;
+}
