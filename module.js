@@ -13,13 +13,13 @@ function init(wsServer, path) {
     registry.handleAppPage(path, `${__dirname}/public/app.html`);
 
     class GameState extends wsServer.users.RoomState {
-        constructor(hostId, hostData, userRegistry) {
-            super(hostId, hostData, userRegistry);
+        constructor(hostId, hostData, userRegistry, registry) {
+            super(hostId, hostData, userRegistry, registry.games.secretHitler.id, path);
             const
                 prekMode = hostData.roomId.includes("prekol"),
                 getResetParams = () => ({
                     libTrack: 0,
-                    fascTrack: 0,
+                    fascTrack: 3,
                     comTrack: 0,
                     skipTrack: 0,
                     activeSlots: new JSONSet(),
@@ -250,6 +250,12 @@ function init(wsServer, path) {
                         state.discardDeck = [];
                         startSelectCan();
                         updateState();
+                        for (const slot of room.activeSlots) {
+                            registry.authUsers.processAchievement({
+                                room,
+                                user: room.playerSlots[slot],
+                            }, registry.achievements.secretSkin.id);
+                        }
                     } else endGame();
                 },
                 updateDeckSize = () => {
@@ -412,6 +418,20 @@ function init(wsServer, path) {
                 endGame = () => {
                     room.phase = "idle";
                     room.paused = true;
+                    if (room.partyWin) {
+                        for (const [slot, player] of Object.entries(state.players)) {
+                            if (player.role === room.partyWin) {
+                                const userData = {
+                                    room,
+                                    user: room.playerSlots[slot]
+                                };
+                                registry.authUsers.processAchievement(userData, registry.achievements.win100SecretHitler.id);
+                                registry.authUsers.processAchievement(userData, registry.achievements.winGames.id, {game: registry.games.secretHitler.id});
+                                if (player.role === 'c')
+                                    registry.authUsers.processAchievement(userData, registry.achievements.secretCommunist.id);
+                            }
+                        }
+                    }
                     if (!isEnoughPlayers())
                         room.teamsLocked = false;
                     update();
@@ -569,7 +589,7 @@ function init(wsServer, path) {
                         nextPres();
                     }
                 },
-                "shot": (slot, shootSlot) => {
+                "shot": async (slot, shootSlot) => {
                     if (room.presAction === "shooting" && room.currentPres === slot && state.players[shootSlot]
                         && !room.playersShot.has(shootSlot) && slot !== shootSlot) {
                         room.playersShot.add(shootSlot);
@@ -578,6 +598,10 @@ function init(wsServer, path) {
                         if (state.players[shootSlot].role === "h") {
                             const presRole = state.players[room.currentPres].role;
                             room.partyWin = presRole === "f" ? "l" : presRole;
+                            registry.authUsers.processAchievement({
+                                room,
+                                user: room.playerSlots[slot]
+                            }, registry.achievements.killHitler.id);
                             endGame();
                         } else
                             nextPres();
@@ -759,11 +783,6 @@ function init(wsServer, path) {
                     }
                     update();
                 },
-                "change-name": (user, value) => {
-                    if (value)
-                        room.playerNames[user] = value.substr && value.substr(0, 60);
-                    update();
-                },
                 "remove-player": (user, playerId) => {
                     if (playerId && user === room.hostId)
                         removePlayer(playerId);
@@ -877,7 +896,7 @@ function init(wsServer, path) {
         return Math.floor(Math.random() * (max - min + 1) + min);
     }
 
-    registry.createRoomManager(path, channel, GameState);
+    registry.createRoomManager(path, GameState);
 }
 
 module.exports = init;

@@ -565,6 +565,7 @@ class Game extends React.Component {
     componentDidMount() {
         this.gameName = "secret-hitler";
         const initArgs = {};
+        localStorage.authToken = localStorage.authToken || makeId();
         if (!localStorage.secretHitlerUserId || !localStorage.secretHitlerUserToken) {
             while (!localStorage.userName)
                 localStorage.userName = prompt("Your name");
@@ -575,6 +576,7 @@ class Game extends React.Component {
             history.replaceState(undefined, undefined, location.origin + location.pathname + "#" + makeId());
         else
             history.replaceState(undefined, undefined, location.origin + location.pathname + location.hash);
+        initArgs.authToken = localStorage.authToken;
         initArgs.avatarId = localStorage.avatarId;
         initArgs.roomId = this.roomId = location.hash.substr(1);
         initArgs.userId = this.userId = localStorage.secretHitlerUserId;
@@ -584,7 +586,7 @@ class Game extends React.Component {
         localStorage.webcamEnabled = 0;
         if (initArgs.roomId.includes("p" + "u" + "t" + "i" + "n"))
             document.documentElement.classList.add("ptn");
-        this.socket = window.socket.of("secret-hitler");
+        this.socket = window.socket.of(location.pathname);
         this.socket.on("state", (state) => {
             const userSlot = state.playerSlots.indexOf(this.userId);
             CommonRoom.processCommonRoom(state, this.state, {
@@ -636,6 +638,9 @@ class Game extends React.Component {
                 players: info.players,
                 trueLogs: info.trueLogs
             }));
+        });
+        this.socket.on("achievement", (user, achievementName) => {
+            alert(`${user} have earner ${achievementName}!`);
         });
         window.socket.on("disconnect", (event) => {
             this.setState({
