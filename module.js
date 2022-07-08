@@ -19,7 +19,7 @@ function init(wsServer, path) {
                 prekMode = hostData.roomId.includes("prekol"),
                 getResetParams = () => ({
                     libTrack: 0,
-                    fascTrack: 3,
+                    fascTrack: 0,
                     comTrack: 0,
                     skipTrack: 0,
                     activeSlots: new JSONSet(),
