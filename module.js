@@ -420,7 +420,7 @@ function init(wsServer, path) {
                     room.paused = true;
                     if (room.partyWin) {
                         for (const [slot, player] of Object.entries(state.players)) {
-                            if (player.role === room.partyWin) {
+                            if (player.role === room.partyWin || (room.partyWin === 'f' && player.role === "h")) {
                                 const userData = {
                                     room,
                                     user: room.playerSlots[slot]
