@@ -1354,3 +1354,8 @@ body {
 .konfa-menu img {
     filter: brightness(0.2) !important;
 }
+
+.chat {
+    transform: translate(-50%);
+    left: 50%;
+}
