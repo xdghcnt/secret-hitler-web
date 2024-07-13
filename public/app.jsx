@@ -568,8 +568,8 @@ class Game extends React.Component {
         this.gameName = "secretHitler";
         const initArgs = CommonRoom.roomInit(this);
         localStorage.webcamEnabled = 0;
-        if (initArgs.roomId.includes("p" + "u" + "t" + "i" + "n"))
-            document.documentElement.classList.add("ptn");
+        // if (initArgs.roomId.includes("p" + "u" + "t" + "i" + "n"))
+        //     document.documentElement.classList.add("ptn");
         this.socket.on("state", (state) => {
             const userSlot = state.playerSlots.indexOf(this.userId);
             CommonRoom.processCommonRoom(state, this.state, {
