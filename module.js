@@ -250,13 +250,13 @@ function init(wsServer, path) {
                         state.discardDeck = [];
                         startSelectCan();
                         updateState();
-                        if (room.roomId.includes("p" + "u" + "t" + "i" + "n"))
-                            for (const slot of room.activeSlots) {
-                                registry.authUsers.processAchievement({
-                                    room,
-                                    user: room.playerSlots[slot],
-                                }, registry.achievements.secretSkin.id);
-                            }
+                        // if (room.roomId.includes("p" + "u" + "t" + "i" + "n"))
+                        //     for (const slot of room.activeSlots) {
+                        //         registry.authUsers.processAchievement({
+                        //             room,
+                        //             user: room.playerSlots[slot],
+                        //         }, registry.achievements.secretSkin.id);
+                        //     }
                     } else endGame();
                 },
                 updateDeckSize = () => {
